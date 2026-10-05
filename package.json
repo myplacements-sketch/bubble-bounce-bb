@@ -1,0 +1,17 @@
+{
+  "name": "delivery-dash-render",
+  "version": "1.5.0",
+  "private": true,
+  "description": "Bubble Bounce Delivery Hub for Render with Turso persistence, manual driver/vehicle allocation, and packing workflow",
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.15.15",
+    "express": "^4.21.2"
+  }
+}

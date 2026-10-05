@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚚 Delivery Dashboard</title>
+<style>
+  :root {
+    --pink: #00a9b7;
+    --pink-light: #e5fbfd;
+    --pink-mid: #73dce4;
+    --orange: #ff6f00;
+    --orange-light: #fff3e0;
+    --green: #00a9b7;
+    --green-light: #e5fbfd;
+    --blue: #7b4bb7;
+    --blue-light: #f1eafa;
+    --purple: #e83e8c;
+    --purple-light: #fde8f2;
+    --red: #c62828;
+    --red-light: #ffebee;
+    --gray: #757575;
+    --gray-light: #f5f5f5;
+    --border: #e0e0e0;
+    --white: #ffffff;
+    --text: #212121;
+    --shadow: 0 2px 8px rgba(0,0,0,0.12);
+    --shadow-lg: 0 4px 20px rgba(0,0,0,0.15);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f0f2f5;
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #00a9b7 0%, #7b4bb7 58%, #e83e8c 100%);
+    color: white;
+    padding: 16px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,169,183,0.30);
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .header h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-sub { font-size: 12px; opacity: 0.85; }
+  .sync-btn {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .sync-btn:active { background: rgba(255,255,255,0.35); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: white;
+    border-bottom: 2px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    position: sticky;
+    top: 88px;
+    z-index: 99;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1;
+    min-width: 70px;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active { color: var(--pink); border-bottom-color: var(--pink); }
+  .tab-icon { display: block; font-size: 18px; margin-bottom: 2px; }
+
+  /* PAGES */
+  .page { display: none; padding: 12px; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+
+  /* SOURCE BADGES */
+  .src-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .src-jj { background: #fff3e0; color: #e65100; }
+  .src-jab { background: #fce4f3; color: #880e4f; }
+  .src-bbb { background: #e8f5e9; color: #1b5e20; }
+
+  /* STATUS BADGES */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .badge-confirmed { background: var(--green-light); color: var(--green); }
+  .badge-pending { background: var(--orange-light); color: var(--orange); }
+  .badge-done { background: #e3f2fd; color: #0d47a1; }
+  .badge-cancelled { background: var(--red-light); color: var(--red); }
+
+  /* LOGISTICS STAGE — separate from booking status: has it physically been delivered / collected? */
+  .badge-awaiting-delivery { background: var(--orange-light); color: var(--orange); }
+  .badge-awaiting-collection { background: var(--purple-light); color: var(--purple); }
+  .badge-collected { background: var(--green-light); color: var(--green); }
+
+  /* BOOKING CARD */
+  .book-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid var(--border);
+    transition: transform 0.1s;
+  }
+  .book-card:active { transform: scale(0.99); }
+  .book-card.confirmed { border-left-color: var(--green); }
+  .book-card.pending { border-left-color: var(--orange); }
+  .book-card.done { border-left-color: var(--blue); }
+  .book-card.cancelled { border-left-color: var(--red); opacity: 0.6; }
+
+  /* Logistics-stage highlight — overrides the booking-status border so drivers can see at a glance */
+  .book-card.stage-awaiting-delivery { border-left-color: var(--orange); background: linear-gradient(90deg, var(--orange-light) 0%, white 6%); }
+  .book-card.stage-awaiting-collection { border-left-color: var(--purple); background: linear-gradient(90deg, var(--purple-light) 0%, white 6%); }
+  .book-card.stage-collected { border-left-color: var(--green); background: linear-gradient(90deg, var(--green-light) 0%, white 6%); opacity: 0.85; }
+
+  .logistics-btn { border: none; border-radius: 10px; font-size: 13px; font-weight: 800; padding: 11px 8px; cursor: pointer; }
+  .logistics-btn.off-orange { background: var(--orange-light); color: var(--orange); }
+  .logistics-btn.on-orange { background: var(--orange); color: white; }
+  .logistics-btn.off-purple { background: var(--purple-light); color: var(--purple); }
+  .logistics-btn.on-purple { background: var(--purple); color: white; }
+
+  /* ROUTE PLANNER */
+  .route-stop { background: white; border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start; }
+  .route-stop-num { flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%; background: var(--pink); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; }
+  .route-leg { text-align: center; font-size: 11px; color: #999; padding: 4px 0; }
+
+  .book-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 8px; }
+  .book-name { font-weight: 800; font-size: 15px; }
+  .book-meta { font-size: 12px; color: var(--gray); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+  .book-actions { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:active { opacity: 0.8; transform: scale(0.97); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-blue { background: var(--blue); color: white; }
+  .btn-pink { background: var(--pink); color: white; }
+  .btn-gray { background: #e0e0e0; color: #333; }
+  .btn-orange { background: var(--orange); color: white; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  /* CALENDAR */
+  .cal-header { display: flex; justify-content: space-between; align-items: center; padding: 0 0 12px; }
+  .cal-month { font-size: 18px; font-weight: 800; }
+  .cal-nav { background: none; border: 1px solid var(--border); border-radius: 8px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; width: 100%; }
+  .cal-dow { text-align: center; font-size: 10px; font-weight: 700; color: var(--gray); padding: 4px 0; }
+  .cal-day {
+    width: 100%;
+    height: 0;
+    padding-bottom: 100%;
+    border-radius: 6px;
+    position: relative;
+    cursor: pointer;
+    background: white;
+    transition: all 0.15s;
+    min-width: 0;
+  }
+  .cal-day-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .cal-day:active { opacity: 0.7; }
+  .cal-day.empty { background: transparent; cursor: default; }
+  .cal-day.today { background: var(--pink-light); color: var(--pink); font-weight: 900; }
+  .cal-day.has-booking { background: var(--green-light); }
+  .cal-day.selected { background: var(--pink); color: white; }
+  .cal-day.selected.has-booking { background: var(--pink); }
+  .cal-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); position: absolute; bottom: 2px; }
+  .cal-day.selected .cal-dot { background: white; }
+  .cal-count {
+    font-size: 8px;
+    font-weight: 900;
+    background: var(--pink);
+    color: white;
+    border-radius: 8px;
+    padding: 0 3px;
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    line-height: 1.4;
+  }
+  .cal-day.selected .cal-count { background: rgba(255,255,255,0.3); }
+
+  /* DAY PANEL */
+  .day-panel {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-top: 12px;
+    box-shadow: var(--shadow);
+  }
+  .day-panel-title { font-weight: 800; font-size: 15px; margin-bottom: 12px; color: var(--pink); }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .stat-num { font-size: 30px; font-weight: 900; color: var(--pink); line-height: 1; }
+  .stat-label { font-size: 11px; color: var(--gray); margin-top: 4px; font-weight: 600; }
+
+  .source-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+  .source-card {
+    border-radius: var(--radius);
+    padding: 12px 8px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .source-card.jj { background: #fff8f0; border: 2px solid #ffcc80; }
+  .source-card.jab { background: #fdf0f8; border: 2px solid #f48fb1; }
+  .source-card.bbb { background: #f0fdf4; border: 2px solid #a5d6a7; }
+  .source-num { font-size: 24px; font-weight: 900; }
+  .source-name { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; color: var(--gray); }
+  .source-card.jj .source-num { color: #e65100; }
+  .source-card.jab .source-num { color: #880e4f; }
+  .source-card.bbb .source-num { color: #1b5e20; }
+
+  /* WEEKEND SECTION */
+  .weekend-section { margin-bottom: 12px; }
+  .weekend-day-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, #00a9b7 0%, #7b4bb7 58%, #e83e8c 100%);
+    color: white;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-weight: 800;
+    font-size: 14px;
+  }
+  .weekend-day-count {
+    background: rgba(255,255,255,0.25);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: auto;
+  }
+
+  /* SEARCH */
+  .search-bar {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    margin-bottom: 10px;
+    outline: none;
+    background: white;
+  }
+  .search-bar:focus { border-color: var(--pink); }
+
+  /* FILTER ROW */
+  .filter-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .filter-chip.active { background: var(--pink); color: white; border-color: var(--pink); }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 40px 20px; color: var(--gray); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; font-weight: 600; }
+  .empty-sub { font-size: 12px; margin-top: 6px; }
+
+  /* CALL/WHATSAPP BUTTONS */
+  .contact-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-call { background: #e8f5e9; color: #2e7d32; }
+  .btn-wa { background: #e8f5e9; color: #1b5e20; }
+
+  /* DATE RANGE PICKER */
+  .date-range { display: flex; gap: 8px; margin-bottom: 10px; }
+  .date-range input { flex: 1; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+  .date-range input:focus { border-color: var(--pink); outline: none; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 13px; font-weight: 800; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; }
+  .modal-overlay.open { display: flex; align-items: flex-end; }
+  .modal {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: #ddd; border-radius: 2px; margin: 0 auto 16px; }
+  .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 14px; }
+  .modal-close { position: absolute; top: 16px; right: 16px; background: #f0f0f0; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; }
+
+  .detail-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  .detail-label { color: var(--gray); min-width: 80px; font-weight: 600; }
+  .detail-value { font-weight: 700; flex: 1; }
+
+  /* DONE TOGGLE */
+  .done-toggle {
+    width: 100%;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+
+  /* LOADING */
+  .loading { text-align: center; padding: 30px; color: var(--gray); font-size: 14px; }
+
+  /* NO BOOKINGS WARNING */
+  .warn-banner {
+    background: #fff3e0;
+    border: 1.5px solid #ffcc80;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #e65100;
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+
+
+  /* PIN ACCESS GATE */
+  body.app-locked > .header,
+  body.app-locked > .tabs,
+  body.app-locked > .page,
+  body.app-locked > .modal-overlay { display: none !important; }
+
+  .pin-gate {
+    position: fixed; inset: 0; z-index: 99999;
+    background: linear-gradient(145deg, #fce4f3 0%, #f3e5f5 50%, #e3f2fd 100%);
+    display: flex; align-items: center; justify-content: center; padding: 22px;
+  }
+  .pin-gate.hidden { display: none; }
+  .pin-card {
+    width: 100%; max-width: 390px; background: white; border-radius: 22px;
+    padding: 26px 22px; box-shadow: 0 16px 45px rgba(0,0,0,.18); text-align: center;
+  }
+  .pin-logo { font-size: 46px; margin-bottom: 8px; }
+  .pin-title { font-size: 23px; font-weight: 900; margin-bottom: 5px; }
+  .pin-sub { font-size: 13px; color: var(--gray); line-height: 1.5; margin-bottom: 18px; }
+  .pin-input {
+    width: 100%; padding: 14px; text-align: center; font-size: 24px; font-weight: 900;
+    letter-spacing: 8px; border: 2px solid var(--border); border-radius: 12px; outline: none;
+  }
+  .pin-input:focus { border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-light); }
+  .pin-submit {
+    width: 100%; margin-top: 12px; padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #00a9b7, #7b4bb7, #e83e8c); color: white;
+    font-size: 15px; font-weight: 900; cursor: pointer;
+  }
+  .pin-error { min-height: 20px; margin-top: 10px; color: var(--red); font-size: 12px; font-weight: 800; }
+  .user-controls { display:flex; align-items:center; gap:6px; }
+  .user-pill {
+    background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
+    color: white; padding: 5px 9px; border-radius: 18px; font-size: 11px; font-weight: 800;
+    white-space: nowrap;
+  }
+  .logout-btn {
+    background: rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4); color:white;
+    padding:6px 9px; border-radius:20px; font-size:11px; font-weight:800; cursor:pointer;
+  }
+
+  /* PACKING TAB */
+  .packing-toolbar { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+  .packing-toolbar input { width:100%; padding:9px 10px; border:1.5px solid var(--border); border-radius:8px; font-size:13px; background:white; }
+  .pack-booking { background:white; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:12px; overflow:hidden; border-left:4px solid var(--pink); }
+  .pack-head { padding:12px 14px; background:linear-gradient(135deg,#fff7fb,#f8f1ff); }
+  .pack-title { font-size:15px; font-weight:900; }
+  .pack-meta { font-size:11px; color:#666; margin-top:3px; line-height:1.5; }
+  .pack-section { padding:10px 14px; border-top:1px solid #f1f1f1; }
+  .pack-section-title { font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:900; color:#777; margin-bottom:6px; }
+  .pack-row { display:flex; align-items:flex-start; gap:9px; padding:7px 0; border-bottom:1px dashed #eee; font-size:13px; font-weight:700; }
+  .pack-row:last-child { border-bottom:none; }
+  .pack-check { width:20px; height:20px; flex:0 0 20px; accent-color:var(--pink); }
+  .pack-qty { min-width:30px; font-weight:900; color:var(--pink); }
+  .pack-note { font-size:12px; color:#555; line-height:1.55; white-space:pre-wrap; }
+  .pack-summary { background:#fff8e1; border:1.5px solid #ffe082; border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.6; margin-bottom:10px; }
+  .pack-complete { background:#e8f5e9 !important; border-left-color:#2e7d32 !important; }
+
+</style>
+</head>
+<body class="app-locked">
+
+<div class="pin-gate" id="pin-gate">
+  <div class="pin-card">
+    <div class="pin-logo">🚚</div>
+    <div class="pin-title">Bubble Bounce Delivery Hub</div>
+    <div class="pin-sub">Enter your 4-digit staff PIN to continue.</div>
+    <form onsubmit="return submitPin(event)">
+      <input id="pin-input" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="4-digit PIN" placeholder="••••">
+      <button class="pin-submit" type="submit">Unlock Bubble Bounce Hub</button>
+    </form>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+</div>
+
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🫧 Bubble Bounce Delivery Hub</h1>
+      <div class="header-sub" id="header-sub">Loading bookings...</div>
+    </div>
+    <div class="user-controls">
+      <span class="user-pill" id="signed-user">🔒 Locked</span>
+      <button class="sync-btn" onclick="loadFromTurso(false)">🔄 Sync DB</button>
+      <button class="logout-btn" onclick="logoutUser()">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('dashboard',this)" data-tab="dashboard"><span class="tab-icon">🏠</span>Home</div>
+  <div class="tab" onclick="showTab('weekend',this)" data-tab="weekend"><span class="tab-icon">🚚</span>Weekend</div>
+  <div class="tab" onclick="showTab('drivers',this)" data-tab="drivers"><span class="tab-icon">👥</span>Drivers</div>
+  <div class="tab" onclick="showTab('packing',this)" data-tab="packing"><span class="tab-icon">📦</span>Packing</div>
+  <div class="tab" onclick="showTab('calendar',this)" data-tab="calendar"><span class="tab-icon">📅</span>Calendar</div>
+  <div class="tab" onclick="showTab('all',this)" data-tab="all"><span class="tab-icon">📋</span>All</div>
+  <div class="tab" onclick="showTab('import',this)" data-tab="import"><span class="tab-icon">📲</span>Import</div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="stats-grid" style="margin-top:12px;">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">Total Bookings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-this-weekend">0</div>
+      <div class="stat-label">This Weekend</div>
+    </div>
+    <div class="stat-card" style="background:var(--orange-light);">
+      <div class="stat-num" id="stat-awaiting-delivery" style="color:var(--orange);">0</div>
+      <div class="stat-label">🕒 Awaiting Delivery</div>
+    </div>
+    <div class="stat-card" style="background:var(--purple-light);">
+      <div class="stat-num" id="stat-awaiting-collection" style="color:var(--purple);">0</div>
+      <div class="stat-label">📦 Out — Awaiting Collection</div>
+    </div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-confirmed">0</div>
+      <div class="stat-label">✅ Confirmed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-pending">0</div>
+      <div class="stat-label">⏳ Pending</div>
+    </div>
+  </div>
+
+  <div class="section-title">Allocation Check</div>
+  <div class="source-cards">
+    <div class="source-card bbb">
+      <div class="source-num" id="src-bbb">0</div>
+      <div class="source-name">Bubble Bounce Bookings</div>
+    </div>
+    <div class="source-card jj" style="border-color:#ffb74d;">
+      <div class="source-num" id="unassigned-driver-count">0</div>
+      <div class="source-name">Driver Not Assigned</div>
+    </div>
+    <div class="source-card jab" style="border-color:#ce93d8;">
+      <div class="source-num" id="unassigned-vehicle-count">0</div>
+      <div class="source-name">Vehicle Not Assigned</div>
+    </div>
+  </div>
+
+  <div class="section-title">Upcoming Bookings</div>
+  <div id="upcoming-list"><div class="loading">Loading...</div></div>
+</div>
+
+<!-- WEEKEND -->
+<div class="page" id="page-weekend">
+  <div style="margin-top:12px;">
+    <div class="date-range">
+      <input type="date" id="wk-from" onchange="renderWeekend()">
+      <input type="date" id="wk-to" onchange="renderWeekend()">
+    </div>
+    <div id="weekend-list"></div>
+  </div>
+</div>
+
+
+
+<!-- DRIVERS -->
+<div class="page" id="page-drivers">
+  <div style="margin-top:12px;">
+    <div class="card" style="background:linear-gradient(135deg,#e0f7fa,#fce4ec);border:none;">
+      <div style="font-size:17px;font-weight:900;margin-bottom:5px;">👥 Driver Deliveries</div>
+      <div style="font-size:12px;color:#555;line-height:1.6;">Bookings stay Unassigned until you manually choose Driver 1, 2, 3 or 4 on Home. Once you assign one, it appears under that driver's Friday, Saturday, Sunday or Monday section. You can move it to another driver at any time.</div>
+    </div>
+    <div id="drivers-board"></div>
+  </div>
+</div>
+
+<!-- PACKING LIST -->
+<div class="page" id="page-packing">
+  <div style="margin-top:12px;">
+    <div class="card" style="background:linear-gradient(135deg,#fff3e0,#fff8e1);border:none;">
+      <div style="font-size:16px;font-weight:900;margin-bottom:5px;">📦 Packing List</div>
+      <div style="font-size:12px;color:#555;line-height:1.6;">Everything that must leave with each booking — main equipment, booked extras, motors/blowers and the standard setup kit. Tick items as they are physically packed.</div>
+    </div>
+    <div class="card" style="background:#fff3cd;border:3px solid #f59e0b;text-align:center;padding:16px;margin-bottom:12px;">
+      <div style="font-size:21px;font-weight:1000;color:#8a4b00;line-height:1.3;">⚠️ KEVIN — IMPORTANT PACKING REMINDER</div>
+      <div style="font-size:16px;font-weight:900;color:#5f3700;line-height:1.55;margin-top:8px;">MAKE SURE EACH BAG IS FULLY PACKED AND CHECKED.<br>FETCH THE BANTAM KEYS AND BRING THE CAR UP.</div>
+    </div>
+    <div class="packing-toolbar">
+      <input type="date" id="pack-from" onchange="renderPacking()">
+      <input type="date" id="pack-to" onchange="renderPacking()">
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:10px;">
+      <button class="btn btn-pink" style="flex:1;" onclick="setPackingWeekend()">This Weekend</button>
+      <button class="btn btn-gray" style="flex:1;" onclick="resetPackingChecks()">Reset Ticks</button>
+    </div>
+    <div id="packing-summary"></div>
+    <div id="packing-list"></div>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="page" id="page-calendar">
+  <div class="card" style="margin-top:12px;">
+    <div class="cal-header">
+      <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+      <div class="cal-month" id="cal-month-label"></div>
+      <button class="cal-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+  <div class="day-panel" id="day-panel" style="display:none;">
+    <div class="day-panel-title" id="day-panel-title"></div>
+    <div id="day-panel-content"></div>
+  </div>
+</div>
+
+<!-- ALL BOOKINGS -->
+<div class="page" id="page-all">
+  <div style="margin-top:12px;">
+    <input class="search-bar" type="text" placeholder="🔍  Search name, address, product..." oninput="renderAll(this.value)">
+    <div class="filter-row" id="filter-row">
+      <div class="filter-chip active" onclick="setFilter('all',this)">All</div>
+      <div class="filter-chip" onclick="setFilter('confirmed',this)">✅ Confirmed</div>
+      <div class="filter-chip" onclick="setFilter('pending',this)">⏳ Pending</div>
+      <div class="filter-chip" onclick="setFilter('awaiting-delivery',this)">🕒 Awaiting Delivery</div>
+      <div class="filter-chip" onclick="setFilter('awaiting-collection',this)">📦 Out — Awaiting Collection</div>
+      <div class="filter-chip" onclick="setFilter('collected',this)">✅ Collected</div>
+    </div>
+    <div id="all-list"></div>
+  </div>
+</div>
+
+<!-- IMPORT PAGE -->
+<div class="page" id="page-import">
+  <div style="margin-top:12px;">
+    <div class="card" style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:none;">
+      <div style="font-size:15px;font-weight:800;margin-bottom:6px;">🟢 Bubble Bounce Delivery Data</div>
+      <div style="font-size:13px;color:#555;line-height:1.8;">Upload the Bubble Bounce booking CSV here. This Delivery Dashboard is now set up specifically for Bubble Bounce.</div>
+    </div>
+    <div class="card" style="border-left:4px solid #2e7d32;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div style="font-weight:800;font-size:14px;">🟢 Bubble Bounce</div>
+        <span id="bbb-status" style="font-size:11px;color:#888;">Not loaded</span>
+      </div>
+      <input type="file" id="file-bbb" accept=".csv,text/csv" style="display:none;" onchange="loadCSV(event,'bbb')">
+      <button class="btn btn-green" style="width:100%;padding:12px;font-size:14px;" onclick="document.getElementById('file-bbb').click()">📂 Upload Bubble Bounce CSV</button>
+      <textarea id="paste-bbb" placeholder="Or paste Bubble Bounce CSV data here..." style="width:100%;height:60px;border:1.5px solid #a5d6a7;border-radius:8px;padding:8px;font-size:12px;font-family:monospace;resize:none;outline:none;margin-top:10px;"></textarea>
+      <button class="btn btn-green" style="width:100%;margin-top:8px;" onclick="loadPaste('bbb')">Load from Paste</button>
+    </div>
+    <button class="btn btn-green" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:4px;" onclick="downloadBubbleBounceCSV()">📥 Download Bubble Bounce CSV</button>
+    <div style="font-size:11px;color:#777;text-align:center;margin:7px 10px 12px;line-height:1.5;">Driver/operations export only. Customer pricing, totals, deposits, balances and fees are not included.</div>
+    <button class="btn btn-gray" style="width:100%;margin-top:8px;font-size:12px;" onclick="clearAllImports()">🗑️ Clear Saved Bookings</button>
+  </div>
+</div>
+
+<!-- BOOKING DETAIL MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <div class="modal-handle"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// DATA
+const IS_PREVIEW = Boolean(window.DELIVERY_DASH_PREVIEW) || window.location.protocol === 'file:';
+
+const COMPANIES = {
+  jj: {
+    name: 'Jump Junction',
+    phone: '0662670282',
+    wa: '27662670282',
+    website: 'jumpjunction-partyhire.co.za',
+    email: 'bookings@jumpjunction.co.za',
+    tagline: 'Jumping Castle & Party Hire | JHB Northern Suburbs',
+    color: '#e65100',
+    emoji: '🟠',
+    tcUrl: 'https://jumpjunction-partyhire.co.za/terms-and-conditions',
+    tc: 'A deposit is required to secure your booking. Equipment must be used on a flat, clear surface. Adult supervision required at all times. No food, drinks, or shoes on inflatables. Equipment may not be moved once set up. Jump Junction is not liable for injuries due to misuse. Full T&Cs: jumpjunction-partyhire.co.za/terms-and-conditions'
+  },
+  jab: {
+    name: 'Jump & Bubble Events',
+    phone: '0674757931',
+    wa: '27674757931',
+    website: 'jumpandbubbleevents.co.za',
+    email: '',
+    tagline: 'Premium Party Hire | Johannesburg & Pretoria',
+    color: '#880e4f',
+    emoji: '🩷',
+    tcUrl: 'https://jumpandbubbleevents.co.za/#terms',
+    tc: 'A deposit is required to confirm your booking. Setup area must be clean, flat, and clear of obstacles. A power point within 15m is required. Adult supervision required at all times. No shoes, food, drinks, face paint, or sharp objects on equipment. Equipment may not be moved once set up. Cannot be used in heavy wind or rain. Full T&Cs: jumpandbubbleevents.co.za/#terms'
+  },
+  bbb: {
+    name: 'Bubble & Bounce Inflatables',
+    phone: '064 176 7407',
+    wa: '27641767407',
+    website: 'bubblebounce.co.za',
+    email: 'bookatbubbles@gmail.com',
+    tagline: 'Bubble Houses, Jumping Castles & Party Hire | Gauteng',
+    color: '#00a9b7',
+    emoji: '🫧',
+    tcUrl: 'https://bubblebounce.co.za/important-documents',
+    tc: 'Please review Bubble & Bounce Inflatables terms and important documents before your hire. Full information: bubblebounce.co.za/important-documents'
+  }
+};
+
+const JJ_CASTLES = {
+  1:"Olaf's Winter Wonderland",2:"Enchanted Castle",3:"Super Pool",4:"Basic Bouncer",
+  5:"PlayStation",6:"Tropical Gladiator",7:"Little Miss #1",8:"Little Miss #2",
+  9:"Mini Luxe White Castle",10:"Elsa Jumping Castle",11:"Princess Dream",
+  12:"Cool Kids 4 in 1",13:"Crocodile",14:"Jungle Jumper #1",15:"Jungle Jumper #2",
+  16:"10m Double Water Slide",17:"10m Single Water Slide",18:"12m Single Water Slide",
+  19:"Soccer Field",20:"Jungle Slide",21:"Giant Slide",22:"Castle Academy"
+};
+
+const JAB_CASTLES = {
+  1:"Bubble House (3m)",2:"Bubble Bounce (4m)",3:"Bubble Tent",
+  4:"White Jumping Castle",5:"Jumping Castle with Slide",6:"Princess Jumping Castle",
+  7:"Jungle Jumper",8:"Cool Kids 4-in-1 Castle",9:"Water Slide",
+  10:"Soft Play Package (Pink Lavender)",11:"Soft Play Package (Blue)",
+  12:"Soft Play Package (Custom Colour)",13:"Adventure Island",14:"Tropical Gladiator"
+};
+
+const BBB_CASTLES = {
+  1:"Basic Bouncer",2:"Jumping Castle with Slide",3:"Bubble House 3m",
+  4:"Bubble Bounce",5:"Water Slide",6:"Soft Play",7:"Cool Kids",8:"Princess Castle",
+  9:"Giant Slide",10:"Soccer Field"
+};
+
+let allBookings = [];
+
+let importedJJ = null, importedJAB = null, importedBBB = null;
+
+let currentFilter = "all";
+
+let calYear, calMonth, calSelectedDay;
+
+function lsGet(key, def = []) {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : def;
+  } catch { return def; }
+}
+
+function getCastleName(source, castleId, booking) {
+  if (booking && booking._fromCSV && booking.castleNameRaw) return booking.castleNameRaw;
+  if (!castleId) return 'No product';
+  const id = +castleId;
+  if (source === 'jj') return JJ_CASTLES[id] || `Castle #${id}`;
+  if (source === 'jab') return JAB_CASTLES[id] || `Product #${id}`;
+  if (source === 'bbb') return BBB_CASTLES[id] || `Product #${id}`;
+  return `Product #${id}`;
+}
+
+function sourceLabel(src) {
+  if (src === 'jj') return 'Jump Junction';
+  if (src === 'jab') return 'Jump & Bubble';
+  if (src === 'bbb') return 'Bubble Bounce';
+  return src;
+}
+
+function fmtDate(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function pad(n) { return String(n).padStart(2,'0'); }
+
+function formatDateNice(ds) {
+  if (!ds) return '—';
+  const d = new Date(ds + 'T00:00:00');
+  return d.toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function getThisWeekend() {
+  const today = new Date();
+  const day = today.getDay(); // 0=Sun, 6=Sat
+  const sat = new Date(today);
+  const sun = new Date(today);
+
+  // Find next/current Saturday
+  const daysToSat = day <= 6 ? (6 - day) : 0;
+  sat.setDate(today.getDate() + (day === 0 ? -1 : daysToSat === 0 && day === 6 ? 0 : daysToSat));
+  sun.setDate(sat.getDate() + 1);
+
+  return {
+    sat: fmtDate(sat),
+    sun: fmtDate(sun)
+  };
+}
+
+function updateStats() {
+  const wk = getThisWeekend();
+  const active = allBookings.filter(b => b.status !== 'cancelled');
+  const thisWknd = active.filter(b => b.date && (b.date === wk.sat || b.date === wk.sun));
+
+  document.getElementById('stat-total').textContent = active.length;
+  document.getElementById('stat-this-weekend').textContent = thisWknd.length;
+  document.getElementById('stat-confirmed').textContent = active.filter(b => b.status === 'confirmed').length;
+  document.getElementById('stat-pending').textContent = active.filter(b => b.status === 'pending').length;
+  document.getElementById('stat-awaiting-delivery').textContent = active.filter(b => logisticsStage(b) === 'awaiting-delivery').length;
+  document.getElementById('stat-awaiting-collection').textContent = active.filter(b => logisticsStage(b) === 'awaiting-collection').length;
+
+  document.getElementById('src-bbb').textContent = active.filter(b => b._source === 'bbb').length;
+  document.getElementById('unassigned-driver-count').textContent = active.filter(b => !String(b._assignedDriver || '').trim()).length;
+  document.getElementById('unassigned-vehicle-count').textContent = active.filter(b => !String(b._assignedVehicle || '').trim()).length;
+}
+
+function loadAll() {
+  allBookings = [];
+
+  // Jump Junction: key = jj_bk (but different file from BBB - both use jj_bk)
+  // Since BBB uses same keys, we load once and tag them
+  // JJ app bookings
+  const jjRaw = lsGet('jj_bk', []);
+  jjRaw.forEach(b => {
+    allBookings.push({ ...b, _source: 'jj', _id: `jj_${b.id}` });
+  });
+
+  // Jump & Bubble Events: key = jab_bk
+  const jabRaw = lsGet('jab_bk', []);
+  jabRaw.forEach(b => {
+    allBookings.push({ ...b, _source: 'jab', _id: `jab_${b.id}` });
+  });
+
+  // Bubble Bounce Bliss uses same key jj_bk as Jump Junction
+  // They share storage — so jj_bk contains both JJ and BBB bookings
+  // The difference: BBB has no motor tracking, JJ does
+  // We can't separate them from localStorage alone unless they were saved to different keys
+  // We'll note this to user and show them as one pool
+
+  updateStats();
+  renderDashboard();
+  renderWeekend();
+  renderCalendar();
+  renderAll();
+  renderDrivers();
+
+  const total = allBookings.length;
+  document.getElementById('header-sub').textContent =
+    `${total} booking${total !== 1 ? 's' : ''} loaded · Tap 🔄 to refresh`;
+}
+
+function renderDashboard() {
+  const today = fmtDate(new Date());
+  const upcoming = allBookings
+    .filter(b => b.date && b.date >= today && b.status !== 'cancelled')
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 8);
+
+  if (!upcoming.length) {
+    document.getElementById('upcoming-list').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">📭</div>
+        <div class="empty-text">No upcoming bookings</div>
+        <div class="empty-sub">All caught up!</div>
+      </div>`;
+    return;
+  }
+
+  document.getElementById('upcoming-list').innerHTML = upcoming.map(b => bookingCard(b, true)).join('');
+}
+
+function renderWeekend() {
+  const wk = getThisWeekend();
+  const fromInput = document.getElementById('wk-from');
+  const toInput = document.getElementById('wk-to');
+
+  if (!fromInput.value) fromInput.value = wk.sat;
+  if (!toInput.value) toInput.value = wk.sun;
+
+  const from = fromInput.value || wk.sat;
+  const to = toInput.value || wk.sun;
+
+  // Get all dates in range
+  const dates = [];
+  let cur = new Date(from + 'T00:00:00');
+  const end = new Date(to + 'T00:00:00');
+  while (cur <= end) {
+    dates.push(fmtDate(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  let html = '';
+  let totalDeliveries = 0;
+
+  dates.forEach(ds => {
+    const dayBookings = allBookings.filter(b => {
+      if (b.status === 'cancelled') return false;
+      if (!b.date) return false;
+      const endDate = b.edate || b.date;
+      return ds >= b.date && ds <= endDate;
+    }).sort((a, b) => {
+      // Sort by delivery time first, then collection time, then name
+      const timeA = a._delivTime || a._collectTime || '99:99';
+      const timeB = b._delivTime || b._collectTime || '99:99';
+      if (timeA !== timeB) return timeA.localeCompare(timeB);
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+    if (!dayBookings.length) return;
+    totalDeliveries += dayBookings.length;
+
+    const dayDate = new Date(ds + 'T00:00:00');
+    const dayName = dayDate.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+
+    html += `
+      <div class="weekend-section">
+        <div class="weekend-day-header">
+          <span>🗓️ ${dayName}</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+            <span class="weekend-day-count">${dayBookings.length} booking${dayBookings.length !== 1 ? 's' : ''}</span>
+            <button onclick="downloadDay('${ds}')" style="background:rgba(255,255,255,0.25);border:1px solid rgba(255,255,255,0.5);color:white;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;">⬇️ Download</button>
+          </div>
+        </div>
+        <div style="background:white;border-radius:0 0 14px 14px;padding:10px;margin-bottom:12px;box-shadow:var(--shadow);">
+          ${dayBookings.map((b, i) => weekendCard(b, i + 1, ds)).join('')}
+        </div>
+      </div>`;
+  });
+
+  if (!html) {
+    html = `<div class="empty">
+      <div class="empty-icon">🎉</div>
+      <div class="empty-text">No deliveries this weekend</div>
+      <div class="empty-sub">Select a date range above to view deliveries</div>
+    </div>`;
+  }
+
+  document.getElementById('weekend-list').innerHTML = html;
+}
+
+function weekendCard(b, num, viewDate) {
+  var product = getCastleName(b._source, b.castleId, b);
+  var extras = Array.isArray(b.extras) ? b.extras : [];
+  var isCollect = b.edate && b.edate === viewDate && b.edate !== b.date;
+  var isDeliver = b.date === viewDate;
+  var hubNotes = b._hubNotes || "";
+  var delivTime = b._delivTime || "";
+  var collectTime = b._collectTime || "";
+  var bid = b._id || "";
+  var phone = b.phone || "";
+  var addr = (b.addr || "").replace(/'/g, "");
+  var bname = (b.name || "").replace(/'/g, "");
+  var stage = logisticsStage(b);
+  var stageMeta = logisticsMeta(stage);
+
+  var dayTag = "";
+  if (isDeliver && isCollect) dayTag = "<span style='background:#9c27b0;color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;'>DELIVER & COLLECT</span>";
+  else if (isCollect)  dayTag = "<span style='background:#1565c0;color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;'>COLLECT</span>";
+  else if (isDeliver)  dayTag = "<span style='background:#2e7d32;color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:10px;'>DELIVER</span>";
+
+  var timeTag = "";
+  if (isDeliver && delivTime) timeTag = "<span style='background:#fff3e0;color:#e65100;font-size:12px;font-weight:800;padding:2px 8px;border-radius:8px;'>" + delivTime + "</span>";
+  else if (isCollect && collectTime) timeTag = "<span style='background:#e3f2fd;color:#1565c0;font-size:12px;font-weight:800;padding:2px 8px;border-radius:8px;'>" + collectTime + "</span>";
+
+  var h = "";
+  h += "<div class='book-card " + b.status + " stage-" + stageMeta.cls + "' style='cursor:default;'>";
+  h += "<div class='book-header'><div style='flex:1;'>";
+  h += "<div style='display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;'>";
+  h += "<span style='background:#f0f0f0;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;'>" + num + "</span>";
+  h += "<span class='book-name'>" + (b.name || "Unknown") + "</span></div>";
+  h += "<div style='display:flex;gap:5px;flex-wrap:wrap;align-items:center;'>";
+  h += "<span class='src-badge src-" + b._source + "'>" + sourceLabel(b._source) + "</span>";
+  h += dayTag + timeTag + "</div></div>";
+  h += "<span class='badge badge-" + stageMeta.cls + "' style='flex-shrink:0;'>" + stageMeta.label + "</span></div>";
+  h += "<div class='book-meta'>Castle: " + product + "</div>";
+  if (extras.length) h += "<div class='book-meta'>Extras: " + extras.join(" / ") + "</div>";
+  h += "<div class='book-meta'>Address: " + (b.addr || "No address") + "</div>";
+  h += "<div class='book-meta'>Phone: " + (phone || "No phone") + "</div>";
+  if (b.setup) h += "<div class='book-meta' style='color:#1565c0;font-weight:600;'>Setup: " + b.setup + "</div>";
+  if (b.balloonColors) h += "<div class='book-meta' style='color:#7C3AED;font-weight:600;'>🎈 " + b.balloonColors + "</div>";
+  if (b.notes) h += "<div class='book-meta' style='color:#555;'>📦 Packing Notes: " + b.notes + "</div>";
+  h += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;'>";
+  h += "<div><div style='font-size:10px;font-weight:700;color:#2e7d32;text-transform:uppercase;margin-bottom:3px;'>Delivery Time</div>";
+  h += "<input type='time' value='" + delivTime + "' style='width:100%;padding:6px 8px;border:1.5px solid #a5d6a7;border-radius:8px;font-size:13px;font-weight:700;color:#2e7d32;outline:none;background:#f0fdf4;' onchange=\"updateTime('" + bid + "','deliv',this.value)\" onclick='event.stopPropagation()'></div>";
+  h += "<div><div style='font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;margin-bottom:3px;'>Collection Time</div>";
+  h += "<input type='time' value='" + collectTime + "' style='width:100%;padding:6px 8px;border:1.5px solid #90caf9;border-radius:8px;font-size:13px;font-weight:700;color:#1565c0;outline:none;background:#e3f2fd;' onchange=\"updateTime('" + bid + "','collect',this.value)\" onclick='event.stopPropagation()'></div>";
+  h += "</div>";
+  h += "<div style='margin-top:8px;'><input type='text' value='" + hubNotes.replace(/'/g, "") + "' placeholder='Add notes for staff...' style='width:100%;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:8px;font-size:12px;outline:none;' onchange=\"updateHubNotes('" + bid + "',this.value)\" onclick='event.stopPropagation()'></div>";
+  h += "<div class='book-actions' style='margin-top:8px;'>";
+  if (phone) h += "<button class='btn btn-green btn-sm' onclick=\"callClient('" + phone + "')\">Call</button>";
+  if (phone) h += "<button class='btn btn-sm' style='background:#25d366;color:white;' onclick=\"waClient('" + phone.replace(/'/g,"") + "','" + bname + "')\">WhatsApp</button>";
+  if (addr)  h += "<button class='btn btn-blue btn-sm' onclick=\"mapsNav('" + addr + "')\">Navigate</button>";
+  h += "</div>";
+  if (phone) {
+    h += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;'>";
+    h += "<button class='btn btn-sm' style='background:linear-gradient(135deg,#2e7d32,#43a047);color:white;font-weight:800;' onclick=\"sendDirectWA('" + bid + "','delivery')\">🚚 Delivery Msg</button>";
+    h += "<button class='btn btn-sm' style='background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-weight:800;' onclick=\"sendDirectWA('" + bid + "','collection')\">🔄 Collection Msg</button>";
+    h += "</div>";
+  }
+  h += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;'>";
+  h += "<button class='logistics-btn " + (b._delivered ? "on-orange" : "off-orange") + "' onclick=\"markDelivered('" + bid + "')\">" + (b._delivered ? "✅ Delivered" : "🚚 Mark Delivered") + "</button>";
+  h += "<button class='logistics-btn " + (b._collected ? "on-purple" : "off-purple") + "' onclick=\"markCollected('" + bid + "')\">" + (b._collected ? "✅ Collected" : "🔄 Mark Collected") + "</button>";
+  h += "</div>";
+
+  h += "</div>";
+  return h;
+}
+
+function initCalendar() {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth();
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-month-label').textContent = `${MONTHS[calMonth]} ${calYear}`;
+
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = fmtDate(new Date());
+
+  let html = ['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${calYear}-${pad(calMonth+1)}-${pad(d)}`;
+    const dayBookings = allBookings.filter(b => {
+      if (b.status === 'cancelled') return false;
+      if (!b.date) return false;
+      const endDate = b.edate || b.date;
+      return ds >= b.date && ds <= endDate;
+    });
+    const cnt = dayBookings.length;
+    const isToday = ds === today;
+    const isSel = ds === calSelectedDay;
+
+    html += `<div class="cal-day ${isToday?'today':''} ${cnt?'has-booking':''} ${isSel?'selected':''}" onclick="selectDay('${ds}')">
+      <div class="cal-day-inner">
+        ${d}
+        ${cnt ? `<span class="cal-count">${cnt}</span>` : ''}
+        ${cnt && !isSel ? '<span class="cal-dot"></span>' : ''}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('cal-grid').innerHTML = html;
+
+  if (calSelectedDay) showDayPanel(calSelectedDay);
+}
+
+function selectDay(ds) {
+  calSelectedDay = calSelectedDay === ds ? null : ds;
+  renderCalendar();
+  if (calSelectedDay) {
+    document.getElementById('day-panel').style.display = 'block';
+    document.getElementById('day-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    document.getElementById('day-panel').style.display = 'none';
+  }
+}
+
+function showDayPanel(ds) {
+  const dayBookings = allBookings.filter(b => {
+    if (b.status === 'cancelled') return false;
+    if (!b.date) return false;
+    const endDate = b.edate || b.date;
+    return ds >= b.date && ds <= endDate;
+  });
+
+  document.getElementById('day-panel-title').textContent = formatDateNice(ds) + ` · ${dayBookings.length} booking${dayBookings.length !== 1 ? 's' : ''}`;
+
+  if (!dayBookings.length) {
+    document.getElementById('day-panel-content').innerHTML = '<div style="color:var(--gray);font-size:13px;">No bookings on this day</div>';
+    return;
+  }
+
+  document.getElementById('day-panel-content').innerHTML = dayBookings.map(b => bookingCard(b, false)).join('');
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderAll();
+}
+
+function renderAll(search = '') {
+  const s = search.toLowerCase();
+  let filtered = allBookings.filter(b => {
+    if (b.status === 'cancelled' && currentFilter !== 'cancelled') {
+      // show cancelled only if specifically filtered
+    }
+    // Status filter
+    if (currentFilter === 'confirmed') return b.status === 'confirmed';
+    if (currentFilter === 'pending') return b.status === 'pending';
+    if (currentFilter === 'awaiting-delivery') return logisticsStage(b) === 'awaiting-delivery';
+    if (currentFilter === 'awaiting-collection') return logisticsStage(b) === 'awaiting-collection';
+    if (currentFilter === 'collected') return logisticsStage(b) === 'collected';
+    if (currentFilter === 'jj') return b._source === 'jj';
+    if (currentFilter === 'jab') return b._source === 'jab';
+    if (currentFilter === 'bbb') return b._source === 'bbb';
+    return b.status !== 'cancelled';
+  });
+
+  if (s) {
+    filtered = filtered.filter(b =>
+      (b.name || '').toLowerCase().includes(s) ||
+      (b.addr || '').toLowerCase().includes(s) ||
+      (b.phone || '').toLowerCase().includes(s) ||
+      getCastleName(b._source, b.castleId, b).toLowerCase().includes(s) ||
+      (b.date || '').includes(s)
+    );
+  }
+
+  filtered.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const list = document.getElementById('all-list');
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">
+      <div class="empty-icon">🔍</div>
+      <div class="empty-text">No bookings found</div>
+      <div class="empty-sub">Try a different search or filter</div>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(b => bookingCard(b, true)).join('');
+}
+
+function bookingCard(b, showDate = true) {
+  const product = getCastleName(b._source, b.castleId, b);
+  const extras = Array.isArray(b.extras) ? b.extras : [];
+  const stage = logisticsStage(b);
+  const stageMeta = logisticsMeta(stage);
+
+  return `
+    <div class="book-card ${b.status} stage-${stageMeta.cls}" onclick="openModal('${b._id}')">
+      <div class="book-header">
+        <div>
+          <div class="book-name">${b.name || 'Unknown'}</div>
+          <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">
+            <span class="src-badge src-${b._source}">${sourceLabel(b._source)}</span>
+            <span class="badge badge-${b.status}">${b.status}</span>
+            ${stage !== 'cancelled' ? `<span class="badge badge-${stageMeta.cls}">${stageMeta.label}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      ${showDate ? `<div class="book-meta">📅 ${formatDateNice(b.date)}${b.edate && b.edate !== b.date ? ' → ' + formatDateNice(b.edate) : ''}</div>` : ''}
+      ${(b._delivTime || b._collectTime) ? `<div class="book-meta">⏰ ${b._delivTime ? 'Deliver ' + b._delivTime : ''}${b._delivTime && b._collectTime ? ' · ' : ''}${b._collectTime ? 'Collect ' + b._collectTime : ''}</div>` : ''}
+      <div class="book-meta">🏰 ${product}</div>
+      ${extras.length ? `<div class="book-meta">➕ ${extras.join(', ')}</div>` : ''}
+      ${b.balloonColors ? `<div class="book-meta">🎈 ${b.balloonColors}</div>` : ''}
+      <div class="book-meta">📍 ${b.addr || 'No address'}</div>
+      <div class="book-meta">📞 ${b.phone || 'No phone'}</div>
+      <div class="book-meta" style="font-weight:800;color:#1b5e20;" onclick="event.stopPropagation()">🚚 Driver:
+        <select onchange="updateAssignedDriver('${b._id}',this.value)" onclick="event.stopPropagation()" style="margin-left:5px;padding:6px 8px;border:1.5px solid #80cbc4;border-radius:8px;background:white;font-weight:800;">
+          ${['','Driver 1','Driver 2','Driver 3','Driver 4'].map(d=>`<option value="${d}" ${String(b._assignedDriver||'')===d?'selected':''}>${d||'Unassigned'}</option>`).join('')}
+        </select>
+      </div>
+      <div class="book-meta" style="font-weight:800;color:#6a1b9a;" onclick="event.stopPropagation()">🚙 Vehicle:
+        <select onchange="updateAssignedVehicle('${b._id}',this.value)" onclick="event.stopPropagation()" style="margin-left:5px;padding:6px 8px;border:1.5px solid #ce93d8;border-radius:8px;background:white;font-weight:800;">
+          ${['','Bantam','Vehicle 2','Vehicle 3','Vehicle 4'].map(v=>`<option value="${v}" ${String(b._assignedVehicle||'')===v?'selected':''}>${v||'Unassigned vehicle'}</option>`).join('')}
+        </select>
+      </div>
+
+    </div>`;
+}
+
+function openModal(uid) {
+  const b = allBookings.find(x => x._id === uid);
+  if (!b) return;
+
+  const product = getCastleName(b._source, b.castleId, b);
+  const extras = Array.isArray(b.extras) ? b.extras : [];
+  const stage = logisticsStage(b);
+  const stageMeta = logisticsMeta(stage);
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-title">${b.name || 'Booking Details'}</div>
+    <span class="src-badge src-${b._source}" style="margin-bottom:12px;display:inline-block;">${sourceLabel(b._source)}</span>
+    <span class="badge badge-${b.status}" style="margin-left:6px;">${b.status}</span>
+    ${stage !== 'cancelled' ? `<span class="badge badge-${stageMeta.cls}" style="margin-left:6px;">${stageMeta.label}</span>` : ''}
+
+    <div style="margin-top:12px;">
+      <div class="detail-row"><span class="detail-label">📅 Date</span><span class="detail-value">${formatDateNice(b.date)}${b.edate && b.edate !== b.date ? ' → ' + formatDateNice(b.edate) : ''}</span></div>
+      <div class="detail-row"><span class="detail-label">📞 Phone</span><span class="detail-value">${b.phone || '—'}</span></div>
+      <div class="detail-row"><span class="detail-label">📍 Address</span><span class="detail-value">${b.addr || '—'}</span></div>
+      <div class="detail-row"><span class="detail-label">🏰 Product</span><span class="detail-value">${product}</span></div>
+      ${extras.length ? `<div class="detail-row"><span class="detail-label">➕ Extras</span><span class="detail-value">${extras.join(', ')}</span></div>` : ''}
+      ${b.m1 ? `<div class="detail-row"><span class="detail-label">⚡ Motor 1</span><span class="detail-value">${b.m1}</span></div>` : ''}
+      ${b.m2 ? `<div class="detail-row"><span class="detail-label">⚡ Motor 2</span><span class="detail-value">${b.m2}</span></div>` : ''}
+      ${b.setup ? `<div class="detail-row"><span class="detail-label">📝 Setup</span><span class="detail-value">${b.setup}</span></div>` : ''}
+      ${b.balloonColors ? `<div class="detail-row"><span class="detail-label">🎈 Balloon Colours</span><span class="detail-value">${b.balloonColors}</span></div>` : ''}
+      ${b._delivTime ? `<div class="detail-row"><span class="detail-label">⏰ Delivery Time</span><span class="detail-value">${b._delivTime}</span></div>` : ''}
+      ${b._collectTime ? `<div class="detail-row"><span class="detail-label">⏰ Collection Time</span><span class="detail-value">${b._collectTime}</span></div>` : ''}
+      ${b.notes ? `<div class="detail-row"><span class="detail-label">📦 Packing Notes</span><span class="detail-value">${b.notes}</span></div>` : ''}
+      <div class="detail-row"><span class="detail-label">🚚 Assigned Driver</span><span class="detail-value"><input type="text" value="${escHtml(b._assignedDriver || '')}" placeholder="Enter driver name" onchange="updateAssignedDriver('${b._id}',this.value)" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></span></div>
+    </div>
+
+    <div class="book-actions" style="margin-top:14px;">
+      ${b.phone ? `<button class="btn btn-green" onclick="callClient('${b.phone}')">📞 Call</button>` : ''}
+      ${b.phone ? `<button class="btn" style="background:#25d366;color:white;" onclick="waClient('${b.phone}','${(b.name||'').replace(/'/g,'')}')" >💬 WhatsApp</button>` : ''}
+      ${b.addr ? `<button class="btn btn-blue" onclick="mapsNav('${b.addr.replace(/'/g, '')}')">🗺️ Navigate</button>` : ''}
+    </div>
+
+    ${b.phone ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+      <button class="btn" style="background:linear-gradient(135deg,#2e7d32,#43a047);color:white;font-size:13px;font-weight:800;padding:13px 8px;border-radius:10px;" onclick="sendDirectWA('${b._id}','delivery')">🚚 Send Delivery Message</button>
+      <button class="btn" style="background:linear-gradient(135deg,#1565c0,#1976d2);color:white;font-size:13px;font-weight:800;padding:13px 8px;border-radius:10px;" onclick="sendDirectWA('${b._id}','collection')">🔄 Send Collection Message</button>
+    </div>` : ''}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+      <button class="logistics-btn ${b._delivered ? 'on-orange' : 'off-orange'}" onclick="markDelivered('${b._id}')">${b._delivered ? '✅ Delivered' : '🚚 Mark Delivered'}</button>
+      <button class="logistics-btn ${b._collected ? 'on-purple' : 'off-purple'}" onclick="markCollected('${b._id}')">${b._collected ? '✅ Collected' : '🔄 Mark Collected'}</button>
+    </div>
+
+    <button onclick="closeModalBtn()" class="btn btn-gray" style="width:100%;margin-top:8px;">Close</button>
+  `;
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModalBtn();
+}
+
+function closeModalBtn() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+// ─── LOGISTICS STAGE ────────────────────────────────────────────────────
+// Separate from booking status (confirmed/pending/cancelled): tracks
+// whether THIS booking has actually been physically delivered and/or
+// collected yet. Needed because a booking can span a weekend — delivered
+// Friday, only collected Monday — so a single "done" flag isn't enough.
+function logisticsStage(b) {
+  if (b.status === 'cancelled') return 'cancelled';
+  if (b._collected) return 'collected';
+  if (b._delivered) return 'awaiting-collection';
+  return 'awaiting-delivery';
+}
+
+function logisticsMeta(stage) {
+  switch (stage) {
+    case 'collected': return { label: '✅ Collected', cls: 'collected' };
+    case 'awaiting-collection': return { label: '📦 Out — Awaiting Collection', cls: 'awaiting-collection' };
+    case 'cancelled': return { label: 'Cancelled', cls: 'cancelled' };
+    default: return { label: '🕒 Awaiting Delivery', cls: 'awaiting-delivery' };
+  }
+}
+
+function markDelivered(uid) {
+  const b = allBookings.find(x => x._id === uid);
+  if (!b) return;
+  b._delivered = !b._delivered;
+  // A collected booking cannot remain collected if delivery is undone.
+  if (!b._delivered && b._collected) { b._collected = false; updateBookingField(uid, '_collected', false); }
+  updateBookingField(uid, '_delivered', b._delivered);
+  closeModalBtn();
+  updateStats();
+  renderDashboard();
+  renderWeekend();
+  renderCalendar();
+  renderAll();
+}
+
+function markCollected(uid) {
+  const b = allBookings.find(x => x._id === uid);
+  if (!b) return;
+  b._collected = !b._collected;
+  // Collection logically means it must have been delivered first.
+  if (b._collected && !b._delivered) { b._delivered = true; updateBookingField(uid, '_delivered', true); }
+  updateBookingField(uid, '_collected', b._collected);
+  closeModalBtn();
+  updateStats();
+  renderDashboard();
+  renderWeekend();
+  renderCalendar();
+  renderAll();
+}
+
+function markDone(uid) {
+  const b = allBookings.find(x => x._id === uid);
+  if (!b) return;
+  b.status = 'done';
+  updateBookingField(uid, 'status', 'done');
+
+  // Only try localStorage save if not a CSV import
+  if (!b._fromCSV) {
+    if (b._source === 'jj' || b._source === 'bbb') {
+      const raw = lsGet('jj_bk', []);
+      const idx = raw.findIndex(x => +x.id === +b.id);
+      if (idx >= 0) { raw[idx].status = 'done'; localStorage.setItem('jj_bk', JSON.stringify(raw)); }
+    } else if (b._source === 'jab') {
+      const raw = lsGet('jab_bk', []);
+      const idx = raw.findIndex(x => +x.id === +b.id);
+      if (idx >= 0) { raw[idx].status = 'done'; localStorage.setItem('jab_bk', JSON.stringify(raw)); }
+    }
+  }
+  // Note: for CSV imports, done status is tracked in memory only for this session
+
+  closeModalBtn();
+  updateStats();
+  renderDashboard();
+  renderWeekend();
+  renderCalendar();
+  renderAll();
+}
+
+function updateHubNotes(uid, val) {
+  updateBookingField(uid, '_hubNotes', val);
+}
+
+function updateTime(uid, type, val) {
+  const field = type === 'deliv' ? '_delivTime' : '_collectTime';
+  updateBookingField(uid, field, val);
+  // Re-sort and re-render the weekend view to keep timeline order
+  renderWeekend();
+}
+
+function updateBookingField(uid, field, val) {
+  const b = allBookings.find(x => x._id === uid);
+  if (!b) return;
+  b[field] = val;
+  ['jj','jab','bbb'].forEach(src => {
+    const imported = src === 'jj' ? importedJJ : src === 'jab' ? importedJAB : importedBBB;
+    if (!imported) return;
+    const idx = imported.findIndex(x => (`${src}_${x.id}`) === uid || x._id === uid);
+    if (idx >= 0) { imported[idx][field] = val; }
+    try { localStorage.setItem(`hub_${src}`, JSON.stringify(imported)); } catch(e) {}
+  });
+
+  // Version 31: keep logistics changes in Turso as well as this browser.
+  if (currentStaffPin && ['_delivTime','_collectTime','_delivered','_collected','_hubNotes','_assignedDriver','_assignedVehicle','status'].includes(field)) {
+    apiCall('update-booking', {
+      method: 'POST',
+      body: { source: b._source, externalId: b.id, field, value: val }
+    }).catch(err => console.warn('Turso booking update failed:', err));
+  }
+}
+
+function downloadDay(ds) {
+  const dayBookings = allBookings.filter(b => {
+    if (b.status === 'cancelled') return false;
+    if (!b.date) return false;
+    const endDate = b.edate || b.date;
+    return ds >= b.date && ds <= endDate;
+  }).sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+  if (!dayBookings.length) { alert('No bookings for this day.'); return; }
+
+  const dayDate = new Date(ds + 'T00:00:00');
+  const dayName = dayDate.toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Build a clean printable HTML page
+  const rows = dayBookings.map((b, i) => {
+    const product = getCastleName(b._source, b.castleId, b);
+    const extras = Array.isArray(b.extras) ? b.extras : [];
+    const isCollect = b.edate && b.edate === ds && b.edate !== b.date;
+    const isDeliver = b.date === ds;
+    let type = isDeliver && isCollect ? '📦 Deliver & Collect' : isCollect ? '🔄 Collect' : '🚚 Deliver';
+    const delivT = b._delivTime || '';
+    const collectT = b._collectTime || '';
+    const timeStr = delivT && collectT ? `${delivT} → ${collectT}` : delivT ? `Deliver ${delivT}` : collectT ? `Collect ${collectT}` : '—';
+    return `
+      <tr style="border-bottom:1px solid #eee;">
+        <td style="padding:10px 8px;font-weight:700;vertical-align:top;text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:#00a9b7;">${i+1}</div>
+          <div style="font-size:11px;font-weight:800;color:#e65100;margin-top:2px;">${timeStr}</div>
+        </td>
+        <td style="padding:10px 8px;vertical-align:top;">
+          <div style="font-weight:800;font-size:14px;">${b.name || '—'}</div>
+          <div style="font-size:12px;color:#555;margin-top:2px;">📞 ${b.phone || '—'}</div>
+        </td>
+        <td style="padding:10px 8px;vertical-align:top;">
+          <div style="font-size:12px;">${type}</div>
+          <div style="font-size:13px;font-weight:700;margin-top:2px;">🏰 ${product}</div>
+          ${extras.length ? `<div style="font-size:11px;color:#666;margin-top:2px;">➕ ${extras.join(' · ')}</div>` : ''}
+        </td>
+        <td style="padding:10px 8px;vertical-align:top;font-size:12px;">
+          <div>📍 ${b.addr || '—'}</div>
+          ${b.setup ? `<div style="margin-top:4px;color:#1565c0;">📋 ${b.setup}</div>` : ''}
+          ${b.notes ? `<div style="margin-top:4px;color:#555;">📦 ${b.notes}</div>` : ''}
+          ${b._hubNotes ? `<div style="margin-top:4px;color:#880e4f;font-weight:700;">📌 ${b._hubNotes}</div>` : ''}
+        </td>
+        <td style="padding:10px 8px;text-align:center;vertical-align:top;">
+          <div style="width:22px;height:22px;border:2px solid #ccc;border-radius:4px;margin:0 auto;"></div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  const delivers = dayBookings.filter(b => b.date === ds).length;
+  const collects = dayBookings.filter(b => b.edate === ds && b.edate !== b.date).length;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Delivery Sheet — ${dayName}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; color: #222; }
+    h1 { font-size: 20px; color: #00a9b7; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #666; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #00a9b7; color: white; padding: 10px 8px; font-size: 12px; text-align: left; }
+    tr:nth-child(even) { background: #fafafa; }
+    @media print { body { padding: 10px; } }
+  </style></head><body>
+  <h1>🚚 Delivery Sheet</h1>
+  <div class="sub">${dayName} &nbsp;·&nbsp; ${delivers} deliver${delivers!==1?'s':''} &nbsp;·&nbsp; ${collects} collect${collects!==1?'s':''} &nbsp;·&nbsp; ${dayBookings.length} total</div>
+  <table>
+    <thead><tr>
+      <th># Time</th><th>Customer</th><th>Job</th><th>Address & Notes</th><th>✓</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <div style="margin-top:20px;font-size:11px;color:#999;">Generated ${new Date().toLocaleString('en-ZA')} · Bubble & Bounce Delivery Hub</div>
+  </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Delivery_Sheet_${ds}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function callClient(phone) {
+  window.location.href = `tel:${phone.replace(/\s/g,'')}`;
+}
+
+function waClient(phone, name) {
+  const clean = phone.replace(/\s/g,'').replace(/^0/, '+27');
+  const msg = encodeURIComponent(`Hi ${name}, just confirming your booking delivery today 😊`);
+  window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
+}
+
+function mapsNav(addr) {
+  // Waze deep link — opens the Waze app on mobile with turn-by-turn navigation started
+  window.open(`https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes`, '_blank');
+}
+
+function sendDirectWA(uid, type) {
+  var b = allBookings.find(function(x) { return x._id === uid; });
+  if (!b || !b.phone) { alert("No phone number for this booking."); return; }
+
+  // Build a popup to choose setup type then send
+  var overlay = document.createElement("div");
+  overlay.id = "setup-picker-overlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:flex-end;";
+
+  var isDelivery = type === "delivery";
+  var co = COMPANIES.bbb;
+  var fname = (b.name || "there").split(" ")[0];
+
+  var setups = [
+    { id:"castle",   label:"🏰 Jumping Castle" },
+    { id:"bubble",   label:"🫧 Bubble House / Tent" },
+    { id:"slide",    label:"💦 Water Slide / Pool" },
+    { id:"softplay", label:"🎪 Soft Play" },
+    { id:"machine",  label:"🍬 Sweet Treat Machine" },
+    { id:"balloons", label:"🎈 Balloon Decor" },
+    { id:"decor",    label:"✨ Event Decor" }
+  ];
+
+  var btns = setups.map(function(s) {
+    return "<button onclick=\"__pickSetup('" + uid + "','" + type + "','" + s.id + "')\" style=\"width:100%;text-align:left;padding:12px 16px;background:white;border:none;border-bottom:1px solid #f0f0f0;font-size:14px;font-weight:600;cursor:pointer;\">" + s.label + "</button>";
+  }).join("");
+
+  overlay.innerHTML = "<div style='background:white;border-radius:20px 20px 0 0;width:100%;padding:20px 0 30px;'>" +
+    "<div style='width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px;'></div>" +
+    "<div style='font-size:16px;font-weight:800;padding:0 16px 12px;'>" + (isDelivery ? "🚚 Delivery" : "🔄 Collection") + " — What are we setting up?</div>" +
+    btns +
+    "<button onclick=\"document.getElementById('setup-picker-overlay').remove()\" style='width:calc(100% - 32px);margin:12px 16px 0;padding:12px;background:#f0f0f0;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;'>Cancel</button>" +
+  "</div>";
+
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.remove(); });
+}
+
+function __pickSetup(uid, type, setup) {
+  var overlay = document.getElementById("setup-picker-overlay");
+  if (overlay) overlay.remove();
+
+  var b = allBookings.find(function(x) { return x._id === uid; });
+  if (!b || !b.phone) return;
+
+  var co = COMPANIES.bbb;
+  var fname = (b.name || "there").split(" ")[0];
+  var dt = b._delivTime ? " at " + b._delivTime : "";
+  var ct = b._collectTime ? " at " + b._collectTime : "";
+  var ex = (Array.isArray(b.extras) ? b.extras : []).filter(Boolean);
+  var N = "\n";
+
+  var SETUPS = {
+    castle: {
+      noun: "jumping castle",
+      delivTC: [
+        "Please ensure there is a clear, flat grassy or paved area large enough for setup",
+        "A standard power point (plug) must be within 15m of the setup area",
+        "The area must be free from sharp objects, stones, rubble, pet waste and overhead obstructions",
+        "Please ensure easy vehicle access to the setup area for our team",
+        "The blower motor must remain plugged in and switched on for the entire duration of the hire",
+        "No food, drinks, face paint, silly string, confetti or sharp objects are permitted inside the castle",
+        "No shoes, jewellery, belts or hard accessories on inflatables",
+        "Adult supervision is required at all times",
+        "Maximum of 6-8 children at a time depending on castle size",
+        "No rough play, somersaults, climbing on walls or overcrowding",
+        "The castle must not be used in heavy rain or strong wind",
+        "Equipment may not be moved once it has been set up"
+      ],
+      collectTC: [
+        "Please switch off and unplug the blower motor before collection",
+        "Allow the castle to fully deflate before our team arrives",
+        "Ensure the equipment is accessible and the area is clear for packing",
+        "Please have someone available at the premises during collection"
+      ]
+    },
+    bubble: {
+      noun: "bubble house",
+      delivTC: [
+        "A clear, flat area is required — minimum 4m x 4m clear space",
+        "A standard power point must be within 15m of the setup area",
+        "Keep all sharp objects, jewellery and pets well away from the bubble at all times",
+        "The blower must remain on for the entire duration of the hire",
+        "Maximum of 6 people inside the bubble at any time",
+        "No food, drinks, face paint, glitter or confetti inside the bubble",
+        "No shoes inside the bubble — socks only",
+        "Do not push, pull or lean against the bubble walls",
+        "Adult supervision required at all times",
+        "The bubble may not be moved once set up",
+        "Keep away from direct heat, open flames or rough surfaces",
+        "Not suitable for use in heavy rain or strong wind"
+      ],
+      collectTC: [
+        "Please switch off and unplug the blower before our team arrives",
+        "Do not attempt to fold or pack the bubble — our team will handle this",
+        "Ensure the area around the bubble is clear for safe deflation and packing",
+        "Please have someone available at the premises during collection"
+      ]
+    },
+    slide: {
+      noun: "water slide",
+      delivTC: [
+        "A flat, grassy area is required with enough space for the full length of the slide",
+        "A water source (hosepipe connection) must be accessible near the setup area",
+        "A power point within 15m is required for the blower motor",
+        "The slide must remain inflated and in use — do not switch off the blower",
+        "One person slides at a time — no racing or double sliding",
+        "No pushing, shoving or rough play on the slide or pool",
+        "Adult supervision required at all times",
+        "No jewellery, sharp accessories or hard objects while using the slide",
+        "Ensure the landing pool has adequate water depth before use",
+        "Not suitable for children under 3 years old without direct adult assistance",
+        "The slide may not be moved once set up"
+      ],
+      collectTC: [
+        "Please switch off the blower and disconnect the water source before collection",
+        "Drain and clear the splash pool area",
+        "Allow the slide to fully deflate before our team arrives to pack",
+        "Please have someone available at the premises during collection"
+      ]
+    },
+    softplay: {
+      noun: "soft play set",
+      delivTC: [
+        "A clean, flat indoor or outdoor area is required — check with us on minimum space needed",
+        "The soft play area must be kept free from food, drinks, and small objects at all times",
+        "Soft play is suitable for toddlers and young children under 6 years old only",
+        "No big kids or adults inside the soft play equipment",
+        "No shoes inside the soft play — socks only",
+        "Adult supervision is required at all times",
+        "Please ensure the setup area is clean and dry before we arrive",
+        "Do not stack or rearrange the soft play pieces once set up",
+        "No face paint, glitter, sand or water near the soft play equipment"
+      ],
+      collectTC: [
+        "Please ensure all soft play pieces are in the area and accounted for",
+        "Remove all personal items (toys, cups, food) from the soft play area before collection",
+        "Please have someone available at the premises during collection"
+      ]
+    },
+    machine: {
+      noun: "sweet treat machine",
+      delivTC: [
+        "A standard power point is required near the setup area",
+        "The machine must be placed on a flat, stable, clean surface",
+        "Keep the machine away from water, liquids and wet surfaces",
+        "Do not leave the machine unattended while in operation",
+        "Only use supplies provided or approved by us in the machine",
+        "Keep children away from the machine motor and heating elements",
+        "Do not attempt to open, repair or modify the machine",
+        "Report any faults or unusual smells immediately — switch off the machine",
+        "The machine must not be moved once set up and connected"
+      ],
+      collectTC: [
+        "Please switch off and unplug the machine before our team arrives",
+        "Remove any remaining supplies and pack them separately",
+        "Wipe down the exterior of the machine — our team will do a final clean",
+        "Please have someone available at the premises during collection"
+      ]
+    },
+    balloons: {
+      noun: "balloon decor",
+      delivTC: [
+        "Please ensure the setup area is clear and accessible before our team arrives",
+        "Confirm the exact placement and layout with our team on arrival",
+        "Keep balloons away from sharp objects, rough surfaces and direct sunlight",
+        "Balloons are not suitable for children under 3 years old due to choking risk",
+        "Do not attempt to move or reposition large balloon installations yourself",
+        "Balloon decor is not reusable — please do not attempt to deflate and pack",
+        "Some balloon installations require wall anchoring — please confirm surfaces in advance"
+      ],
+      collectTC: [
+        "If collection is included in your package, please ensure the area is accessible",
+        "Balloon waste will be bagged and removed by our team",
+        "Please do not pop or dismantle balloons before our team arrives",
+        "Please have someone available at the premises during collection"
+      ]
+    },
+    decor: {
+      noun: "event decor",
+      delivTC: [
+        "Please ensure the venue is accessible and the setup area is cleared before our arrival",
+        "Confirm the decor layout and colour scheme with our team in advance",
+        "Do not move or rearrange decor pieces once our team has set up",
+        "Handle all decor items with care — clients are liable for any damages",
+        "Ensure decor is kept away from food, drinks, candles and open flames",
+        "Some items require wall mounting or anchoring — confirm surface types in advance",
+        "Decor must be kept dry and out of direct rain or strong wind"
+      ],
+      collectTC: [
+        "Please ensure all decor items are intact and accounted for before collection",
+        "Do not dismantle or pack any decor items — our team will handle this",
+        "Ensure the venue is accessible for our team to collect",
+        "Any damaged or missing items will be charged at replacement cost",
+        "Please have someone available at the premises during collection"
+      ]
+    }
+  };
+
+  var s = SETUPS[setup] || SETUPS.castle;
+  var tcList = type === "delivery" ? s.delivTC : s.collectTC;
+  var m = "";
+
+  if (type === "delivery") {
+    m += co.name.toUpperCase() + " — YOUR " + s.noun.toUpperCase() + " IS ON ITS WAY! " + N + N;
+    m += "Hi " + fname + "! \uD83D\uDC4B" + N + N;
+    m += "Exciting news — our team is on the way to deliver and set up your " + s.noun + dt + "! ";
+    m += "We are so excited to be part of your celebration today. \uD83C\uDF89" + N + N;
+    m += "To make sure everything goes smoothly, please have the following ready before we arrive:" + N + N;
+    for (var i = 0; i < tcList.length; i++) { m += "\u2705 " + tcList[i] + N; }
+    m += N + "Please make sure the setup area is ready when our team arrives to avoid any delays. \uD83D\uDE0A" + N;
+    m += "Our team will walk you through everything once the setup is complete." + N + N;
+    if (ex.length) { m += "\uD83D\uDCE6 Your order includes: " + ex.join(", ") + N + N; }
+    m += "Thank you so much for choosing " + co.name + "! \uD83C\uDF1F" + N;
+    m += "We cannot wait to make your event absolutely magical." + N + N;
+    m += "\uD83D\uDCCC Full Terms & Conditions: " + co.tcUrl + N + N;
+    m += "\uD83D\uDCDE " + co.phone + N;
+    m += "\uD83C\uDF10 " + co.website + N;
+
+  } else {
+    m += co.name.toUpperCase() + " — COLLECTION REMINDER " + N + N;
+    m += "Hi " + fname + "! \uD83D\uDC4B" + N + N;
+    m += "We hope today was absolutely amazing and that everyone had the best time! \uD83C\uDF89\u2728" + N + N;
+    m += "Just a friendly reminder that our team will be coming to collect your " + s.noun + ct + "." + N + N;
+    m += "To help us wrap up quickly and smoothly, please:" + N + N;
+    for (var i = 0; i < tcList.length; i++) { m += "\u2705 " + tcList[i] + N; }
+    m += N + "We truly hope you and your guests had a wonderful celebration! \uD83D\uDC9B" + N;
+    m += "It would mean the world to us if you could leave us a quick Google review — it really helps small businesses like ours grow! \uD83C\uDF1F" + N + N;
+    m += "Thank you again for choosing " + co.name + ". Until next time! \uD83C\uDF88" + N + N;
+    m += "\uD83D\uDCDE " + co.phone + N;
+    m += "\uD83C\uDF10 " + co.website + N;
+
+  }
+
+  var clean = b.phone.replace(/\s/g, "").replace(/^0/, "+27").replace(/\+/g, "");
+  window.open("https://wa.me/" + clean + "?text=" + encodeURIComponent(m), "_blank");
+}
+function showTab(t, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(tb => tb.classList.remove('active'));
+  const page = document.getElementById(`page-${t}`);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  else {
+    // find the tab by data-tab attribute
+    const tab = document.querySelector(`.tab[data-tab="${t}"]`);
+    if (tab) tab.classList.add('active');
+  }
+  if (t === 'packing') renderPacking();
+  if (t === 'drivers') renderDrivers();
+}
+
+// IMPORT
+
+function parseCSV(text) {
+  // Strip BOM if present (Excel sometimes adds it)
+  text = text.replace(/^\uFEFF/, '');
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  // Parse quoted CSV properly
+  function parseLine(line) {
+    const result = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"' && !inQ) { inQ = true; }
+      else if (ch === '"' && inQ) {
+        if (line[i+1] === '"') { cur += '"'; i++; }
+        else { inQ = false; }
+      } else if (ch === ',' && !inQ) { result.push(cur); cur = ''; }
+      else { cur += ch; }
+    }
+    result.push(cur);
+    return result;
+  }
+  const headers = parseLine(lines[0]).map(h => h.trim().toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const vals = parseLine(lines[i]);
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = (vals[idx] || '').trim(); });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function stripMoneyFromText(value) {
+  let s = String(value || '');
+  // Remove bracketed prices such as (R200) without removing the item name.
+  s = s.replace(/\s*\(\s*R\s*[\d,.]+\s*\)/gi, '');
+  // Remove money-only operational/payment note fragments.
+  const parts = s.split('|').map(x => x.trim()).filter(Boolean).filter(part => {
+    return !/(?:^|\b)(?:amount|total|payment|paid|deposit|balance|discount|delivery\s*(?:fee)?|collection\s*(?:fee)?|transport\s*fee|custom invoice items?)\b/i.test(part) || !/R\s*[\d,.]+/i.test(part);
+  });
+  s = parts.join(' | ');
+  // Remove any remaining rand amounts so imported delivery data never carries money forward.
+  s = s.replace(/\bR\s*[\d,.]+\b/gi, '').replace(/\(\s*\)/g, '').replace(/\s{2,}/g, ' ').trim();
+  return s;
+}
+
+function csvRowToBooking(row, idx) {
+  // Bubble Bounce operational CSV format. Financial columns are deliberately ignored.
+  const castleName = row['item(s)'] || row['items/products'] || row['castle/product hired'] || row['castle hired'] || row['product hired'] || row['product'] || row['castle'] || '';
+  const extrasRaw = stripMoneyFromText(row['extras'] || '');
+  const parsedExtras = extrasRaw ? extrasRaw.split(/\s*(?:\||,|;)\s*/).map(x => x.trim()).filter(Boolean) : [];
+  const extrasList = [
+    row['generator'] === 'Yes' ? '⚡ Generator' : null,
+    ...parsedExtras,
+    row['tres tables'] && row['tres tables'] !== '' ? `🪵 ${row['tres tables']} Trestle Tables` : null,
+    row['adult chairs'] && row['adult chairs'] !== '' ? `🪑 ${row['adult chairs']} Adult Chairs` : null,
+    row['kiddies sets'] && row['kiddies sets'] !== '' ? `🧒 ${row['kiddies sets']} Kiddies Sets` : null,
+  ].filter(Boolean);
+
+  const deliveryDate = row['delivery date'] || row['date'] || '';
+  const collectionDate = row['collection date'] || row['end date'] || deliveryDate;
+  const timeWindow = row['time window'] || row['delivery time'] || row['deliver time'] || row['time'] || '';
+  const balloons = row['balloons'] || row['balloon colours'] || row['balloon colors'] || '';
+  const setup = row['setup surface'] || row['setup notes'] || row['setup'] || '';
+
+  const customer = row['customer'] || row['name'] || row['customer name'] || '';
+  const phone = row['phone'] || row['phone number'] || '';
+  const address = row['delivery address'] || row['address'] || '';
+  const reference = row['ref'] || row['reference'] || row['booking ref'] || row['booking id'] || '';
+  const fallbackId = [deliveryDate, collectionDate, timeWindow, customer, phone, address, castleName]
+    .map(v => String(v || '').trim()).join('|') || String(idx);
+
+  return {
+    id: reference || fallbackId,
+    name: customer,
+    phone: phone,
+    addr: address,
+    date: deliveryDate,
+    edate: collectionDate,
+    status: (row['status'] || 'confirmed').toLowerCase(),
+    castleId: null,
+    castleNameRaw: stripMoneyFromText(castleName),
+    extras: extrasList,
+    notes: stripMoneyFromText(row['general notes'] || row['notes'] || ''),
+    setup: setup,
+    balloonColors: balloons,
+    _delivTime: timeWindow,
+    _collectTime: row['collection time'] || row['collect time'] || '',
+    _fromCSV: true,
+    _hubNotes: '',
+    _assignedDriver: '',
+    _assignedVehicle: ''
+  };
+}
+
+// Bubble Bounce-only import
+
+function loadCSV(event, source) {
+  const file = event.target.files[0];
+  if (!file) { alert('No file selected.'); return; }
+  const reader = new FileReader();
+  reader.onerror = function() { alert('⚠️ Could not read the file. Try a different file.'); };
+  reader.onload = function(e) {
+    try {
+      const text = e.target.result;
+      if (!text || !text.trim()) { alert('⚠️ The file appears to be empty.'); return; }
+      const rows = parseCSV(text);
+      if (!rows.length) { alert('⚠️ Could not read any rows from the CSV. Make sure it was exported directly from your booking app (not edited in Excel first).'); return; }
+      const bookings = rows.map((r, i) => csvRowToBooking(r, i)).filter(b => b.name || b.date);
+      if (!bookings.length) { alert('⚠️ File loaded but no valid bookings found. Check the file has Name and Date columns.'); return; }
+      applyImport(source, bookings, file.name);
+    } catch(err) {
+      alert('⚠️ Error reading file: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function bookingMatchKey(b) {
+  return [(b.name || '').trim().toLowerCase(), (b.phone || '').replace(/\D/g, ''), b.date || ''].join('|');
+}
+
+function mergeHubFields(newBookings, oldBookings) {
+  if (!oldBookings || !oldBookings.length) return newBookings;
+  const oldMap = {};
+  oldBookings.forEach(b => { oldMap[bookingMatchKey(b)] = b; });
+  return newBookings.map(b => {
+    const old = oldMap[bookingMatchKey(b)];
+    if (!old) return b;
+    return {
+      ...b,
+      _hubNotes: old._hubNotes || '',
+      _assignedDriver: old._assignedDriver || b._assignedDriver || '',
+      _assignedVehicle: old._assignedVehicle || b._assignedVehicle || '',
+      // Prefer a time freshly pulled from this import (e.g. Party Hub now sends
+      // it); otherwise keep a time that was set manually in the hub before.
+      _delivTime: b._delivTime || old._delivTime || '',
+      _collectTime: b._collectTime || old._collectTime || '',
+      _delivered: !!old._delivered,
+      _collected: !!old._collected
+    };
+  });
+}
+
+function applyImport(source, bookings, label, silent) {
+  // Ensure each booking has a unique id
+  bookings = bookings.map((b, i) => ({ ...b, id: b.id !== undefined ? b.id : i }));
+  const existing = source === 'jj' ? importedJJ : source === 'jab' ? importedJAB : importedBBB;
+  bookings = mergeHubFields(bookings, existing);
+  const count = bookings.length;
+  const statusEl = document.getElementById(`${source}-status`);
+  if (source === 'jj') { importedJJ = bookings; }
+  if (source === 'jab') { importedJAB = bookings; }
+  if (source === 'bbb') { importedBBB = bookings; }
+
+  // Keep a browser copy for offline/reload convenience.
+  try {
+    localStorage.setItem(`hub_${source}`, JSON.stringify(bookings));
+    localStorage.setItem(`hub_${source}_label`, label);
+    localStorage.setItem(`hub_${source}_time`, new Date().toISOString());
+  } catch(e) { console.warn('localStorage save failed:', e); }
+
+  statusEl.textContent = `⏳ Saving ${count} bookings to Turso…`;
+  statusEl.style.color = '#555';
+
+  // Version 31: imports are now persisted to Turso, not only localStorage.
+  if (currentStaffPin) {
+    apiCall('save-bookings', { method: 'POST', body: { source, bookings } })
+      .then(data => {
+        statusEl.textContent = `✅ ${data.saved ?? count} bookings saved to Turso`;
+        statusEl.style.color = source === 'jj' ? '#e65100' : source === 'jab' ? '#880e4f' : '#1b5e20';
+      })
+      .catch(err => {
+        statusEl.textContent = `⚠️ Browser saved · Turso error: ${err.message}`;
+        statusEl.style.color = '#b71c1c';
+      });
+  } else {
+    statusEl.textContent = `✅ ${count} bookings saved in this browser`;
+    statusEl.style.color = source === 'jj' ? '#e65100' : source === 'jab' ? '#880e4f' : '#1b5e20';
+  }
+
+  if (!silent) alert(`✅ ${count} bookings loaded from ${label}. They are now being saved to Turso. Tap 🔄 Sync DB to refresh the shared bookings.`);
+}
+
+function loadPaste(source) {
+  const ta = document.getElementById(`paste-${source}`);
+  const raw = ta.value.trim();
+  if (!raw) { alert('Nothing pasted yet — copy from the app first.'); return; }
+
+  // Try JSON first (from clipboard copy button), then CSV
+  let bookings;
+  if (raw.startsWith('{')) {
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch(e) { alert('⚠️ Could not read the data.'); return; }
+    if (!parsed.bookings || !Array.isArray(parsed.bookings)) { alert('⚠️ Invalid export format.'); return; }
+    bookings = parsed.bookings;
+  } else {
+    // Treat as CSV text
+    const rows = parseCSV(raw);
+    if (!rows.length) { alert('⚠️ Could not read as CSV either. Try using the file upload instead.'); return; }
+    bookings = rows.map((r, i) => csvRowToBooking(r, i));
+  }
+
+  applyImport(source, bookings, source === 'jj' ? 'Jump Junction' : source === 'jab' ? 'Jump & Bubble' : 'Bubble Bounce Bliss');
+}
+
+function updateAssignedDriver(uid, val) {
+  updateBookingField(uid, '_assignedDriver', String(val || '').trim());
+  renderDashboard(); renderWeekend(); renderCalendar(); renderAll(); renderDrivers();
+}
+
+function updateAssignedVehicle(uid, val) {
+  updateBookingField(uid, '_assignedVehicle', String(val || '').trim());
+  renderDashboard(); renderWeekend(); renderCalendar(); renderAll(); renderDrivers(); renderPacking();
+}
+
+function csvEscape(v) {
+  const s = String(v == null ? '' : v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function downloadBubbleBounceCSV() {
+  const rows = allBookings.filter(b => b._source === 'bbb' && b.status !== 'cancelled');
+  if (!rows.length) { alert('No Bubble Bounce bookings are available to download.'); return; }
+  // Operations-only export: intentionally NO price, total, deposit, balance or fee fields.
+  const headers = ['Date','Collection Date','Customer','Phone','Address','Products','Extras','Delivery Time','Collection Time','Assigned Driver','Assigned Vehicle','Status','Packing Notes','Setup Notes','Balloon Colours'];
+  const data = rows.map(b => [
+    b.date || '', b.edate || '', b.name || '', b.phone || '', b.addr || '',
+    getCastleName(b._source, b.castleId, b) || '',
+    Array.isArray(b.extras) ? b.extras.join(' | ') : (b.extras || ''),
+    b._delivTime || '', b._collectTime || '', b._assignedDriver || '', b._assignedVehicle || '', b.status || '',
+    b.notes || '', b.setup || '', b.balloonColors || ''
+  ]);
+  const csv = [headers, ...data].map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `Bubble_Bounce_Deliveries_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+}
+
+function syncAll(silent = false) {
+  allBookings = [];
+
+  if (importedBBB) importedBBB.forEach(b => allBookings.push({ ...b, _source: 'bbb', _id: `bbb_${b.id}` }));
+
+  updateStats();
+  renderDashboard();
+  renderWeekend();
+  renderCalendar();
+  renderAll();
+  renderDrivers();
+
+  const total = allBookings.length;
+  document.getElementById('header-sub').textContent = total
+    ? `${total} booking${total !== 1 ? 's' : ''} loaded · Tap 🔄 to refresh`
+    : '0 bookings in Turso · Tap 🔄 to refresh';
+
+  if (!total && !silent) {
+    alert('No bookings are currently stored in Turso. Import fresh CSVs to add bookings.');
+    return;
+  }
+
+  if (!silent) {
+    showTab('dashboard');
+    window.scrollTo(0, 0);
+  }
+}
+
+function clearLocalBookingCache() {
+  ['jj','jab','bbb'].forEach(src => {
+    localStorage.removeItem(`hub_${src}`);
+    localStorage.removeItem(`hub_${src}_label`);
+    localStorage.removeItem(`hub_${src}_time`);
+    const el = document.getElementById(`${src}-status`);
+    if (el) { el.textContent = 'Not loaded'; el.style.color = '#888'; }
+  });
+  importedJJ = []; importedJAB = []; importedBBB = [];
+  allBookings = [];
+  updateStats(); renderDashboard(); renderWeekend(); renderCalendar(); renderAll();
+}
+
+async function clearAllImports() {
+  if (!currentStaffPin) {
+    alert('Please sign in before clearing bookings.');
+    return;
+  }
+  if (!confirm('⚠️ CLEAR ALL BOOKINGS?\n\nThis will permanently delete every booking from the shared Turso database on ALL devices. Stock will not be deleted.\n\nAnyone signed in with the general Bubble Bounce PIN can do this.')) return;
+  if (!confirm('Final confirmation: permanently delete ALL Delivery Dash bookings from Turso?')) return;
+
+  const sub = document.getElementById('header-sub');
+  if (sub) sub.textContent = 'Deleting bookings from Turso…';
+  try {
+    const data = await apiCall('clear-bookings', { method: 'POST', body: {} });
+    clearLocalBookingCache();
+    if (sub) sub.textContent = '0 bookings in Turso · shared database cleared';
+    alert(`✅ Cleared ${data.deleted || 0} booking${Number(data.deleted) === 1 ? '' : 's'} from Turso. All devices will show empty after login or Sync DB.`);
+  } catch (e) {
+    if (sub) sub.textContent = `Clear failed: ${e.message}`;
+    alert(`⚠️ Could not clear Turso: ${e.message}`);
+  }
+}
+
+function loadPersistedImports() {
+  let found = false;
+  ['jj','jab','bbb'].forEach(source => {
+    try {
+      const saved = localStorage.getItem(`hub_${source}`);
+      const label = localStorage.getItem(`hub_${source}_label`) || source;
+      const time = localStorage.getItem(`hub_${source}_time`);
+      if (saved) {
+        const bookings = JSON.parse(saved);
+        if (source === 'jj') importedJJ = bookings;
+        if (source === 'jab') importedJAB = bookings;
+        if (source === 'bbb') importedBBB = bookings;
+        const statusEl = document.getElementById(`${source}-status`);
+        if (statusEl) {
+          const d = time ? new Date(time).toLocaleDateString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+          statusEl.textContent = `✅ ${bookings.length} bookings · ${d}`;
+          statusEl.style.color = source === 'jj' ? '#e65100' : source === 'jab' ? '#880e4f' : '#1b5e20';
+        }
+        found = true;
+      }
+    } catch(e) { console.warn('Failed to load persisted data for', source, e); }
+  });
+  return found;
+}
+
+
+// ─── PACKING LIST ─────────────────────────────────────────────────────────
+function getDriverDays(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  // Use the Friday belonging to the current Fri-Mon operating block. Tue-Thu points to the coming Friday.
+  const dow=today.getDay();
+  let delta;
+  if(dow===5) delta=0; else if(dow===6) delta=-1; else if(dow===0) delta=-2; else if(dow===1) delta=-3; else delta=5-dow;
+  const fri=new Date(today); fri.setDate(today.getDate()+delta);
+  return [0,1,2,3].map((n)=>{const d=new Date(fri);d.setDate(fri.getDate()+n);return {name:['Friday','Saturday','Sunday','Monday'][n],date:fmtDate(d)};});
+}
+function driverBookingCard(b,ds){
+  const product=getCastleName(b._source,b.castleId,b);
+  const isDelivery=b.date===ds, isCollection=(b.edate||b.date)===ds;
+  return `<div class="card" style="padding:10px;margin:8px 0;border-left:5px solid var(--teal);">
+    <div style="font-weight:900;font-size:14px;">${escHtml(b.name||'Unknown customer')}</div>
+    <div style="font-size:12px;color:#555;margin-top:4px;">${isDelivery?'🚚 DELIVERY ':''}${isCollection?'🔄 COLLECTION ':''}${escHtml((isDelivery?b._delivTime:b._collectTime)||'Time not set')}</div>
+    <div style="font-size:12px;margin-top:4px;">🏰 ${escHtml(product)}${Array.isArray(b.extras)&&b.extras.length?' • '+escHtml(b.extras.join(', ')):''}</div>
+    <div style="font-size:12px;margin-top:4px;font-weight:900;color:#6a1b9a;">🚙 Vehicle: ${escHtml(b._assignedVehicle||'⚠️ Not assigned')}</div>
+    <div style="font-size:12px;margin-top:4px;">📍 ${escHtml(b.addr||'No address')}</div>
+    <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;">
+      ${b.phone?`<button class="btn btn-green btn-sm" onclick="callClient('${String(b.phone).replace(/'/g,'')}')">Call</button>`:''}
+      ${b.addr?`<button class="btn btn-blue btn-sm" onclick="mapsNav('${String(b.addr).replace(/'/g,'')}')">Navigate</button>`:''}
+    </div>
+  </div>`;
+}
+function renderDrivers(){
+  const board=document.getElementById('drivers-board'); if(!board)return;
+  const days=getDriverDays();
+  const drivers=['Driver 1','Driver 2','Driver 3','Driver 4'];
+  board.innerHTML=drivers.map((driver,di)=>{
+    const total=allBookings.filter(b=>b.status!=='cancelled'&&b._assignedDriver===driver&&days.some(x=>b.date===x.date||(b.edate||b.date)===x.date)).length;
+    return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:12px;">
+      <div style="padding:13px 14px;background:linear-gradient(135deg,var(--teal),var(--purple));color:white;font-size:17px;font-weight:900;">🚚 ${driver} <span style="font-size:11px;opacity:.9;">• ${total} booking${total!==1?'s':''}</span></div>
+      <div style="padding:10px;">${days.map((day,i)=>{
+        const bs=allBookings.filter(b=>b.status!=='cancelled'&&b._assignedDriver===driver&&(b.date===day.date||(b.edate||b.date)===day.date)).sort((a,b)=>(a._delivTime||a._collectTime||'99:99').localeCompare(b._delivTime||b._collectTime||'99:99'));
+        const id=`drv-${di}-${i}`;
+        return `<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;">
+          <button onclick="document.getElementById('${id}').style.display=document.getElementById('${id}').style.display==='none'?'block':'none'" style="width:100%;border:0;background:#fafafa;padding:11px;text-align:left;font-weight:900;cursor:pointer;display:flex;justify-content:space-between;"><span>${day.name} • ${formatDateNice(day.date)}</span><span>${bs.length} ▾</span></button>
+          <div id="${id}" style="display:none;padding:7px;">${bs.length?bs.map(b=>driverBookingCard(b,day.date)).join(''):'<div style="padding:12px;color:#777;font-size:12px;">No bookings assigned for this day.</div>'}</div>
+        </div>`;
+      }).join('')}</div></div>`;
+  }).join('');
+}
+
+// Packing rules are deliberately conservative: booked products/extras are always
+// shown, and inflatable-type bookings also receive the standard setup/safety kit.
+function packKey(b, item) {
+  return 'dd_pack_' + encodeURIComponent((b._id || b.id || '') + '|' + item);
+}
+function packChecked(b,item) { return localStorage.getItem(packKey(b,item)) === '1'; }
+function togglePack(bid,item,checked) {
+  const b=allBookings.find(x=>String(x._id||x.id)===String(bid)); if(!b)return;
+  localStorage.setItem(packKey(b,item), checked?'1':'0');
+  renderPacking();
+}
+function resetPackingChecks(){
+  if(!confirm('Reset all packing ticks on this device?')) return;
+  Object.keys(localStorage).filter(k=>k.startsWith('dd_pack_')).forEach(k=>localStorage.removeItem(k));
+  renderPacking();
+}
+function packingQtyLabel(raw){
+  const s=String(raw||'').trim();
+  // Quantity only when a number is followed by whitespace (e.g. 100 Balloons)
+  // or an explicit x with whitespace after it (e.g. 2 x Chairs). This avoids
+  // misreading measurements such as 10m Extension Cord or 10x6m Castle.
+  let m=s.match(/^(\d+)\s+[xX]\s+(.+)$/) || s.match(/^(\d+)\s+(.+)$/);
+  return m ? {qty:m[1]+'×', name:m[2]} : {qty:'1×',name:s};
+}
+function isInflatableProduct(name){
+  return /(castle|bouncer|jumper|slide|gladiator|soccer field|bubble house|bubble bounce|bubble tent|inflatable|playstation|crocodile|cool kids|princess|jungle)/i.test(name||'');
+}
+function explicitMotorCount(b){
+  const all=[...(Array.isArray(b.extras)?b.extras:[]), b.notes||'', b.setup||''].join(' ');
+  const m=all.match(/(\d+)\s*(?:x\s*)?(?:motors?|blowers?)/i);
+  return m ? Math.max(1,+m[1]) : null;
+}
+function packingItemsForBooking(b){
+  const product=(getCastleName(b._source,b.castleId,b)||'').trim();
+  const products=product.split(/\s+\+\s+|\s*\|\s*/).map(x=>x.trim()).filter(Boolean);
+  const extras=(Array.isArray(b.extras)?b.extras:[]).map(x=>String(x).trim()).filter(Boolean);
+  const rows=[];
+  const add=(name,cat,qty='1×')=>{
+    name=String(name||'').trim(); if(!name)return;
+    const sig=(cat+'|'+name).toLowerCase();
+    if(!rows.some(r=>r.sig===sig)) rows.push({name,cat,qty,sig});
+  };
+  products.forEach(x=>add(x,'Booked equipment'));
+  extras.forEach(x=>{
+    const q=packingQtyLabel(x.replace(/^[^\w\d]+/,'').trim());
+    add(q.name,'Booked extras',q.qty);
+  });
+
+  const inflatables=products.filter(isInflatableProduct);
+  if(inflatables.length){
+    const motorCount=explicitMotorCount(b) || inflatables.length;
+    add('Blower / motor','Power & setup',motorCount+'×');
+    add('Correct power leads / extension leads','Power & setup',motorCount+'×');
+    add('Groundsheet / protective sheet where required','Setup kit');
+    add('Pegs / stakes for grass OR approved weights / sandbags for hard surface','Safety kit');
+    add('Hammer / mallet','Safety kit');
+    add('Tie-down ropes / straps','Safety kit');
+    add('Motor rain cover / weather cover','Safety kit',motorCount+'×');
+    add('Repair / emergency kit','Safety kit');
+  }
+  if(extras.some(x=>/generator/i.test(x))){
+    add('Generator','Generator kit');
+    add('Generator fuel checked / filled','Generator kit');
+    add('Generator extension lead / adaptor','Generator kit');
+  }
+  if(/bubble house|bubble bounce|bubble tent/i.test(product)){
+    add('Bubble unit tunnel / entrance pieces','Bubble setup');
+    add('Bubble blower / air equipment','Bubble setup');
+    add('Required extension leads','Bubble setup');
+  }
+  if(/soft play/i.test(product)){
+    add('All soft-play pieces for booked set','Soft play');
+    add('Soft-play floor mats','Soft play');
+    add('Ball-pit balls / accessories if included','Soft play');
+  }
+  if(/gel blaster/i.test(product+' '+extras.join(' '))){
+    add('Gel blasters / activity equipment','Activity kit');
+    add('Safety gear / goggles','Activity kit');
+    add('Ammo / gel balls as booked','Activity kit');
+  }
+  // Booking-specific physical requirements must never disappear from Kevin's list.
+  // Balloon colours/details are treated as a packable requirement when present.
+  if(String(b.balloonColors||'').trim() && !/^(no|none|n\/a)$/i.test(String(b.balloonColors).trim())){
+    add('Balloons / balloon setup: '+String(b.balloonColors).trim(),'Booked extras');
+  }
+  return rows;
+}
+function setPackingWeekend(){
+  const wk=getThisWeekend();
+  document.getElementById('pack-from').value=wk.sat;
+  document.getElementById('pack-to').value=wk.sun;
+  renderPacking();
+}
+function renderPacking(){
+  const fromEl=document.getElementById('pack-from'), toEl=document.getElementById('pack-to');
+  if(!fromEl||!toEl)return;
+  if(!fromEl.value){const wk=getThisWeekend();fromEl.value=wk.sat;toEl.value=wk.sun;}
+  const from=fromEl.value, to=toEl.value||from;
+  const vehicleOrder={'':-1,'Bantam':0,'Vehicle 2':1,'Vehicle 3':2,'Vehicle 4':3};
+  const bookings=allBookings.filter(b=>b.status!=='cancelled' && b.date && b.date>=from && b.date<=to)
+    .sort((a,b)=>(vehicleOrder[String(a._assignedVehicle||'')] ?? 50)-(vehicleOrder[String(b._assignedVehicle||'')] ?? 50)
+      || String(a._assignedVehicle||'').localeCompare(String(b._assignedVehicle||''))
+      || (a.date||'').localeCompare(b.date||'')
+      || (a._delivTime||'99:99').localeCompare(b._delivTime||'99:99'));
+  const list=document.getElementById('packing-list'), summary=document.getElementById('packing-summary');
+  if(!bookings.length){
+    summary.innerHTML='';
+    list.innerHTML="<div class='empty'><div class='empty-icon'>📦</div><div class='empty-text'>No deliveries in this packing range</div></div>";
+    return;
+  }
+  let total=0,done=0;
+  let out='';
+  let lastVehicle=null;
+  bookings.forEach(b=>{
+    const vehicle=String(b._assignedVehicle||'').trim();
+    if(vehicle!==lastVehicle){
+      const label=vehicle || '⚠️ VEHICLE NOT ASSIGNED';
+      const warn=!vehicle;
+      out+=`<div style="margin:16px 0 9px;padding:13px 14px;border-radius:12px;font-size:18px;font-weight:900;${warn?'background:#ffebee;color:#b71c1c;border:2px solid #ef9a9a;':'background:linear-gradient(135deg,var(--teal),var(--purple));color:white;'}">🚙 ${warn?'ALLOCATE THESE BOOKINGS BEFORE PACKING':'LOAD INTO '+escHtml(label)}</div>`;
+      lastVehicle=vehicle;
+    }
+    const items=packingItemsForBooking(b);
+    const complete=items.length && items.every(x=>packChecked(b,x.name));
+    total+=items.length; done+=items.filter(x=>packChecked(b,x.name)).length;
+    const bid=String(b._id||b.id||'').replace(/'/g,'');
+    out+=`<div class="pack-booking ${complete?'pack-complete':''}">
+      <div class="pack-head">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+          <div><div class="pack-title">${escHtml(b.name||'Unknown customer')}</div>
+          <div class="pack-meta">${escHtml(b.date||'')} ${b._delivTime?' • '+escHtml(b._delivTime):''} • ${escHtml(sourceLabel(b._source))}<br>${escHtml(b.addr||'No address')}</div><div style="margin-top:8px;padding:10px;border-radius:9px;background:#fff3e0;font-size:15px;font-weight:900;color:#bf360c;">🚙 PACK INTO: ${escHtml(b._assignedVehicle||'⚠️ VEHICLE NOT ASSIGNED')}</div></div>
+          <span class="badge ${complete?'badge-confirmed':'badge-pending'}">${complete?'✅ PACKED':'📦 PACK'}</span>
+        </div>
+      </div>`;
+    const cats=[...new Set(items.map(x=>x.cat))];
+    cats.forEach(cat=>{
+      out+=`<div class="pack-section"><div class="pack-section-title">${escHtml(cat)}</div>`;
+      items.filter(x=>x.cat===cat).forEach(x=>{
+        const checked=packChecked(b,x.name);
+        out+=`<label class="pack-row"><input class="pack-check" type="checkbox" ${checked?'checked':''} onchange="togglePack('${bid}',decodeURIComponent('${encodeURIComponent(x.name)}'),this.checked)">
+          <span class="pack-qty">${escHtml(x.qty)}</span><span style="${checked?'text-decoration:line-through;color:#888;':''}">${escHtml(x.name)}</span></label>`;
+      });
+      out+='</div>';
+    });
+    if(b.setup||b.notes||b.balloonColors){
+      out+='<div class="pack-section"><div class="pack-section-title">⚠️ Booking-specific packing / setup notes</div>';
+      if(b.setup) out+=`<div class="pack-note"><strong>Setup:</strong> ${escHtml(b.setup)}</div>`;
+      if(b.balloonColors) out+=`<div class="pack-note"><strong>Balloon colours:</strong> ${escHtml(b.balloonColors)}</div>`;
+      if(b.notes) out+=`<div class="pack-note"><strong>Packing notes:</strong> ${escHtml(b.notes)}</div>`;
+      out+='</div>';
+    }
+    out+='</div>';
+  });
+  summary.innerHTML=`<div class="pack-summary"><strong>${bookings.length} booking${bookings.length!==1?'s':''}</strong> to pack • <strong>${done}/${total}</strong> checklist items ticked.<br><span style="color:#777;">Kevin's list is pulled from every non-cancelled delivery booking in this date range. Each booking shows the vehicle it must be packed into — independent of driver assignment. Main booked equipment, extras and balloon requirements are included, with standard setup/safety kit added for inflatable bookings.</span></div>`;
+  list.innerHTML=out;
+}
+
+// ─── ROUTE PLANNER ─────────────────────────────────────────────────────
+// Plans actual delivery/collection stops for one date. Road travel times and
+// distances come from OSRM after addresses are geocoded with OpenStreetMap's
+// Nominatim service. Waze remains the driver navigation app.
+//
+// IMPORTANT: road-time estimates here are planning estimates, not live Waze
+// traffic ETAs. The configurable safety buffer is deliberately added to every
+// drive leg so fixed booking times can be checked for clashes conservatively.
+
+function saveRouteStart() { saveRouteSettings(); }
+
+function saveRouteSettings() {
+  const vals = {
+    addr: (document.getElementById('route-start') || {}).value || '',
+    start: (document.getElementById('route-start-time') || {}).value || '07:00',
+    service: (document.getElementById('route-service-min') || {}).value || '20',
+    buffer: (document.getElementById('route-buffer-min') || {}).value || '10'
+  };
+  try { localStorage.setItem('route_settings', JSON.stringify(vals)); } catch(e) {}
+  try { localStorage.setItem('route_start_addr', vals.addr.trim()); } catch(e) {}
+}
+
+function loadRouteDefaults() {
+  const dateEl = document.getElementById('route-date');
+  const startEl = document.getElementById('route-start');
+  const startTimeEl = document.getElementById('route-start-time');
+  const serviceEl = document.getElementById('route-service-min');
+  const bufferEl = document.getElementById('route-buffer-min');
+  if (dateEl && !dateEl.value) dateEl.value = fmtDate(new Date());
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('route_settings') || 'null'); } catch(e) {}
+  if (startEl) {
+    let legacy = '';
+    try { legacy = localStorage.getItem('route_start_addr') || ''; } catch(e) {}
+    startEl.value = (saved && saved.addr) || legacy;
+  }
+  if (startTimeEl) startTimeEl.value = (saved && saved.start) || '07:00';
+  if (serviceEl) serviceEl.value = (saved && saved.service) || '20';
+  if (bufferEl) bufferEl.value = (saved && saved.buffer) || '10';
+}
+
+function timeToMinutes(t) {
+  if (!/^\d{2}:\d{2}$/.test(t || '')) return null;
+  const [h,m] = t.split(':').map(Number);
+  if (h > 23 || m > 59) return null;
+  return h * 60 + m;
+}
+
+function minutesToTime(mins) {
+  mins = Math.max(0, Math.round(mins));
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  return pad(h) + ':' + pad(m);
+}
+
+function escHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const lat1 = a.lat * Math.PI / 180, lat2 = b.lat * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.asin(Math.sqrt(h));
+}
+
+async function geocodeAddress(addr) {
+  const clean = (addr || '').trim();
+  if (!clean) return null;
+  const cacheKey = 'geo_' + clean.toLowerCase();
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return { ...JSON.parse(cached), _cached: true };
+  } catch(e) {}
+
+  try {
+    const q = /south africa|gauteng|johannesburg|pretoria/i.test(clean) ? clean : clean + ', Gauteng, South Africa';
+    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=za&q=${encodeURIComponent(q)}`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'en-ZA,en' } });
+    if (!res.ok) throw new Error('Geocoder HTTP ' + res.status);
+    const data = await res.json();
+    if (data && data[0]) {
+      const coord = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name || clean };
+      try { localStorage.setItem(cacheKey, JSON.stringify(coord)); } catch(e) {}
+      return { ...coord, _cached: false };
+    }
+  } catch(e) { console.warn('Geocode failed for', clean, e); }
+  return null;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function getRoadMatrix(coords) {
+  if (!coords.length) return null;
+  if (coords.length === 1) return { durations:[[0]], distances:[[0]], source:'none' };
+  try {
+    const coordStr = coords.map(c => `${c.lng},${c.lat}`).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${coordStr}?annotations=duration,distance`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Routing HTTP ' + res.status);
+    const data = await res.json();
+    if (data.code !== 'Ok' || !data.durations || !data.distances) throw new Error(data.message || 'No route matrix');
+    return { durations:data.durations, distances:data.distances, source:'osrm' };
+  } catch(e) {
+    console.warn('Road matrix failed, using conservative straight-line estimate', e);
+    const durations = coords.map(a => coords.map(b => {
+      const km = haversineKm(a,b);
+      return km === 0 ? 0 : (km / 35) * 3600; // fallback average urban speed
+    }));
+    const distances = coords.map(a => coords.map(b => haversineKm(a,b) * 1000 * 1.25));
+    return { durations, distances, source:'fallback' };
+  }
+}
+
+function matrixTravel(matrix, fromIndex, toIndex, bufferMin) {
+  if (fromIndex == null || toIndex == null) return { min:0, km:0 };
+  const sec = matrix.durations[fromIndex] && matrix.durations[fromIndex][toIndex];
+  const metres = matrix.distances[fromIndex] && matrix.distances[fromIndex][toIndex];
+  const baseMin = Number.isFinite(sec) ? Math.ceil(sec / 60) : 0;
+  return { min: baseMin + bufferMin, baseMin, km: Number.isFinite(metres) ? metres / 1000 : 0 };
+}
+
+function buildSmartOrder(stops, matrix, startIndex, startMin, serviceMin, bufferMin) {
+  const remaining = stops.slice();
+  const route = [];
+  let currentIdx = startIndex;
+  let clock = startMin;
+
+  while (remaining.length) {
+    const timed = remaining.filter(s => s.fixedMin != null).sort((a,b) => a.fixedMin - b.fixedMin);
+    const deadline = timed[0] || null;
+    const untimed = remaining.filter(s => s.fixedMin == null);
+    let chosen = null;
+
+    if (deadline && untimed.length) {
+      const feasible = untimed.map(s => {
+        const toCandidate = matrixTravel(matrix, currentIdx, s.matrixIndex, bufferMin).min;
+        const candidateToDeadline = matrixTravel(matrix, s.matrixIndex, deadline.matrixIndex, bufferMin).min;
+        const finishCandidate = clock + toCandidate + serviceMin;
+        const deadlineArrival = finishCandidate + candidateToDeadline;
+        return { s, toCandidate, deadlineArrival };
+      }).filter(x => x.deadlineArrival <= deadline.fixedMin)
+        .sort((a,b) => a.toCandidate - b.toCandidate);
+      if (feasible.length) chosen = feasible[0].s;
+    }
+
+    if (!chosen && deadline) chosen = deadline;
+    if (!chosen) {
+      chosen = untimed.slice().sort((a,b) =>
+        matrixTravel(matrix, currentIdx, a.matrixIndex, bufferMin).min -
+        matrixTravel(matrix, currentIdx, b.matrixIndex, bufferMin).min
+      )[0];
+    }
+
+    const travel = matrixTravel(matrix, currentIdx, chosen.matrixIndex, bufferMin);
+    const arrival = clock + travel.min;
+    let serviceStart = arrival;
+    let lateBy = 0;
+    let waitMin = 0;
+    if (chosen.fixedMin != null) {
+      if (arrival > chosen.fixedMin) lateBy = arrival - chosen.fixedMin;
+      else { waitMin = chosen.fixedMin - arrival; serviceStart = chosen.fixedMin; }
+    }
+    const depart = serviceStart + serviceMin;
+    chosen.travel = travel;
+    chosen.arrivalMin = arrival;
+    chosen.serviceStartMin = serviceStart;
+    chosen.departMin = depart;
+    chosen.lateBy = lateBy;
+    chosen.waitMin = waitMin;
+    route.push(chosen);
+    remaining.splice(remaining.indexOf(chosen), 1);
+    currentIdx = chosen.matrixIndex;
+    clock = depart;
+  }
+  return route;
+}
+
+async function calculateRoute() {
+  const ds = document.getElementById('route-date').value;
+  const startAddr = document.getElementById('route-start').value.trim();
+  const startTime = document.getElementById('route-start-time').value || '07:00';
+  const serviceMin = Math.max(0, parseInt(document.getElementById('route-service-min').value || '20', 10));
+  const bufferMin = Math.max(0, parseInt(document.getElementById('route-buffer-min').value || '10', 10));
+  const progressEl = document.getElementById('route-progress');
+  const resultsEl = document.getElementById('route-results');
+  if (!ds) { alert('Pick a date first.'); return; }
+  if (!startAddr) { alert('Add your warehouse / starting address so travel times can be checked properly.'); return; }
+  const startMin = timeToMinutes(startTime);
+  if (startMin == null) { alert('Choose a valid route start time.'); return; }
+  saveRouteSettings();
+
+  // Only create real movements for the chosen day. Same-day hires correctly
+  // create TWO stops (delivery + collection) when a collection leg exists.
+  const dayBookings = allBookings.filter(b => b.status !== 'cancelled' && b.addr && (b.date === ds || b.edate === ds));
+  let stops = [];
+  dayBookings.forEach(b => {
+    if (b.date === ds) stops.push({ booking:b, type:'deliver', time:b._delivTime || '', fixedMin:timeToMinutes(b._delivTime || '') });
+    if (b.edate === ds) {
+      // Avoid adding a duplicate collection only when the source has no collection signal at all.
+      const hasCollectionSignal = b.edate !== b.date || !!b._collectTime;
+      if (hasCollectionSignal) stops.push({ booking:b, type:'collect', time:b._collectTime || '', fixedMin:timeToMinutes(b._collectTime || '') });
+    }
+  });
+
+  if (!stops.length) {
+    resultsEl.innerHTML = `<div class="empty"><div class="empty-icon">🗺️</div><div class="empty-text">No delivery or collection stops for this day</div></div>`;
+    return;
+  }
+
+  resultsEl.innerHTML = '';
+  progressEl.textContent = `📍 Checking starting address...`;
+  const startCoord = await geocodeAddress(startAddr);
+  if (!startCoord) {
+    progressEl.textContent = '';
+    resultsEl.innerHTML = `<div class="card" style="border-left:4px solid var(--red);"><strong>⚠️ Starting address could not be found.</strong><div style="font-size:12px;margin-top:5px;">Use a fuller address with suburb and city, then calculate again.</div></div>`;
+    return;
+  }
+  if (!startCoord._cached) await sleep(1100);
+
+  const located = [];
+  const unlocated = [];
+  const addressCache = new Map();
+  for (let i = 0; i < stops.length; i++) {
+    progressEl.textContent = `📍 Checking address ${i + 1} of ${stops.length}...`;
+    const key = (stops[i].booking.addr || '').trim().toLowerCase();
+    let coord = addressCache.get(key);
+    if (!coord) {
+      coord = await geocodeAddress(stops[i].booking.addr);
+      if (coord) addressCache.set(key, coord);
+      if (coord && !coord._cached) await sleep(1100); // Nominatim public policy: max 1 request/sec
+    }
+    if (coord) { stops[i].coord = coord; located.push(stops[i]); }
+    else unlocated.push(stops[i]);
+  }
+
+  if (!located.length) {
+    progressEl.textContent = '';
+    renderRoute([], unlocated, 0, startAddr, { startTime, serviceMin, bufferMin, matrixSource:'none' });
+    return;
+  }
+
+  progressEl.textContent = '🚗 Calculating road travel times...';
+  const coords = [startCoord, ...located.map(s => s.coord)];
+  located.forEach((s,i) => s.matrixIndex = i + 1);
+  const matrix = await getRoadMatrix(coords);
+  const route = buildSmartOrder(located, matrix, 0, startMin, serviceMin, bufferMin);
+  const totalKm = route.reduce((sum,s) => sum + (s.travel ? s.travel.km : 0), 0);
+
+  progressEl.textContent = '';
+  renderRoute(route, unlocated, totalKm, startAddr, { startTime, serviceMin, bufferMin, matrixSource:matrix.source });
+}
+
+function routeStopLabel(type) {
+  if (type === 'collect') return { text: '🔄 Collect', color: '#1565c0' };
+  return { text: '🚚 Deliver', color: '#2e7d32' };
+}
+
+function mapsNav(addr, lat, lng) {
+  // Waze Deep Link. Coordinates are preferred when the planner has already
+  // geocoded the stop; otherwise Waze searches the full address.
+  let url;
+  if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
+    url = `https://waze.com/ul?ll=${encodeURIComponent(lat + ',' + lng)}&navigate=yes&utm_source=delivery_hub`;
+  } else {
+    url = `https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes&utm_source=delivery_hub`;
+  }
+  window.open(url, '_blank');
+}
+
+function renderRoute(route, unlocated, totalKm, startAddr, opts) {
+  const resultsEl = document.getElementById('route-results');
+  opts = opts || {};
+  const clashes = route.filter(s => s.lateBy > 0);
+  let html = '';
+
+  html += `<div class="card" style="text-align:center;background:linear-gradient(135deg,#00a9b7,#7b4bb7);color:white;">
+    <div style="font-size:24px;font-weight:900;">${route.length} stop${route.length !== 1 ? 's' : ''} · ~${totalKm.toFixed(1)} km</div>
+    <div style="font-size:12px;opacity:0.95;margin-top:3px;">Starts ${escHtml(opts.startTime || '')} · ${opts.serviceMin || 0} min/stop · ${opts.bufferMin || 0} min drive buffer</div>
+    <div style="font-size:10px;opacity:0.8;margin-top:4px;">Road estimates: ${opts.matrixSource === 'osrm' ? 'OSRM / OpenStreetMap' : 'fallback estimate'} · Navigation: Waze</div>
+  </div>`;
+
+  if (clashes.length) {
+    html += `<div class="card" style="border-left:5px solid var(--red);background:var(--red-light);">
+      <div style="font-weight:900;color:var(--red);font-size:15px;">⚠️ ${clashes.length} TIME CLASH${clashes.length !== 1 ? 'ES' : ''}</div>
+      <div style="font-size:12px;color:#7f1d1d;margin-top:5px;line-height:1.5;">This route cannot reach every fixed booking time with the current start time, stop duration and safety buffer. Change a booking time, leave earlier, reduce stop time, or use another vehicle/driver.</div>
+    </div>`;
+  } else if (route.length) {
+    html += `<div class="card" style="border-left:5px solid var(--green);background:var(--green-light);">
+      <div style="font-weight:900;color:var(--green);">✅ No calculated time clashes</div>
+      <div style="font-size:11px;color:#356b3a;margin-top:4px;">All fixed times are reachable using the planning estimate plus your safety buffer.</div>
+    </div>`;
+  }
+
+  route.forEach((s, i) => {
+    const b = s.booking;
+    const label = routeStopLabel(s.type);
+    const safeAddr = escHtml(b.addr || '');
+    const safeName = escHtml(b.name || 'Unknown');
+    const phone = String(b.phone || '').replace(/[^0-9+]/g,'');
+    const navAddr = encodeURIComponent(b.addr || '').replace(/'/g, '%27');
+    const navName = encodeURIComponent(b.name || 'there').replace(/'/g, '%27');
+    const fixed = s.fixedMin != null ? minutesToTime(s.fixedMin) : '';
+    const eta = minutesToTime(s.arrivalMin);
+    const start = minutesToTime(s.serviceStartMin);
+    const depart = minutesToTime(s.departMin);
+    const statusHtml = s.lateBy > 0
+      ? `<span style="background:var(--red);color:white;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;">⚠️ ${s.lateBy} MIN LATE</span>`
+      : fixed ? `<span style="background:var(--green);color:white;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;">✅ ON TIME</span>` : '';
+
+    if (s.travel) {
+      html += `<div class="route-leg">↓ ~${s.travel.km.toFixed(1)} km · ${s.travel.baseMin} min drive + ${opts.bufferMin || 0} min buffer</div>`;
+    }
+
+    html += `<div class="route-stop" style="${s.lateBy > 0 ? 'border:2px solid var(--red);' : ''}">
+      <div class="route-stop-num">${i + 1}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-weight:800;font-size:14px;">${safeName}</span>
+          <span style="background:${label.color};color:white;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;">${label.text}</span>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;align-items:center;">${statusHtml}
+          ${fixed ? `<span style="font-size:11px;font-weight:800;color:#e65100;">Booked ${fixed}</span>` : `<span style="font-size:11px;color:#777;">Flexible time</span>`}
+        </div>
+        <div style="font-size:12px;margin-top:6px;"><strong>ETA ${eta}</strong> · Work ${start}–${depart}${s.waitMin ? ` · wait ${s.waitMin} min` : ''}</div>
+        <div style="font-size:12px;color:#555;margin-top:3px;overflow-wrap:anywhere;">📍 ${safeAddr}</div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+          ${phone ? `<button class="btn btn-green btn-sm" onclick="callClient('${phone}')">Call</button>` : ''}
+          ${phone ? `<button class="btn btn-sm" style="background:#25d366;color:white;" onclick="waClient('${phone}',decodeURIComponent('${navName}'))">WhatsApp</button>` : ''}
+          <button class="btn btn-blue btn-sm" onclick="mapsNav(decodeURIComponent('${navAddr}'),${Number(s.coord.lat)},${Number(s.coord.lng)})">🚙 Open Waze</button>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  if (unlocated.length) {
+    html += `<div class="card" style="border-left:4px solid var(--red);">
+      <div style="font-weight:800;font-size:13px;color:var(--red);margin-bottom:6px;">⚠️ Couldn't locate ${unlocated.length} stop${unlocated.length !== 1 ? 's' : ''}</div>
+      <div style="font-size:12px;color:#666;">These are NOT included in the clash calculation. Fix the address, then calculate again:</div>
+      <ul style="margin:6px 0 0 18px;font-size:12px;color:#666;">
+        ${unlocated.map(s => `<li>${escHtml(s.booking.name || 'Unknown')} — ${escHtml(s.booking.addr || 'no address')} (${s.type})</li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  html += `<div style="font-size:10px;color:#999;text-align:center;line-height:1.5;margin:10px 8px 18px;">Planning data uses OpenStreetMap geocoding/road data. Waze opens for live driver navigation; actual traffic can change after the route is calculated.</div>`;
+  resultsEl.innerHTML = html;
+}
+
+
+
+// RENDER + TURSO ACCESS
+const STAFF_SESSION_KEY = 'delivery_hub_staff_session_v2';
+const STAFF_PIN_SESSION_KEY = 'delivery_hub_staff_pin_v1';
+let currentStaffPin = '';
+
+function setSignedUser(user) {
+  const el = document.getElementById('signed-user');
+  if (el) el.textContent = user ? `👤 ${user.name}` : '🔒 Locked';
+}
+
+function unlockApp(user, pin, persist = true) {
+  if (!user) return;
+  currentStaffPin = String(pin || currentStaffPin || '');
+  document.body.classList.remove('app-locked');
+  const gate = document.getElementById('pin-gate');
+  if (gate) gate.classList.add('hidden');
+  setSignedUser(user);
+  if (persist) {
+    try {
+      localStorage.setItem(STAFF_SESSION_KEY, JSON.stringify({ name: user.name, role: user.role }));
+      sessionStorage.setItem(STAFF_PIN_SESSION_KEY, currentStaffPin);
+    } catch(e) {}
+  }
+}
+
+async function apiCall(action, options = {}) {
+  // Standalone preview mode: a downloaded index.html has no Express /api server.
+  // Preview uses the same single general PIN when login is tested manually
+  // with locally imported CSV data. Live deployments continue to use Turso below.
+  if (IS_PREVIEW) {
+    const previewPin = String((options.body && options.body.pin) || currentStaffPin || '').trim();
+    if (action === 'login') {
+      if (previewPin !== '4321') throw new Error('Incorrect PIN');
+      return { ok: true, user: { name: 'Bubble Bounce Team', role: 'Staff' }, preview: true };
+    }
+    if (previewPin !== '4321') throw new Error('Enter PIN 4321 to use preview mode.');
+    if (action === 'bookings') return { ok: true, tables: [], allTableNames: [], preview: true };
+    if (action === 'save-bookings') return { ok: true, saved: Array.isArray(options.body?.bookings) ? options.body.bookings.length : 0, preview: true };
+    if (action === 'update-booking') return { ok: true, changed: 1, preview: true };
+    if (action === 'clear-bookings') return { ok: true, deleted: 0, preview: true };
+    if (action === 'health') return { ok: true, preview: true };
+  }
+  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (currentStaffPin) headers['X-App-Pin'] = currentStaffPin;
+  const res = await fetch(`/api?action=${encodeURIComponent(action)}`, {
+    method: options.method || 'GET',
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+    cache: 'no-store'
+  });
+  let data = {};
+  try { data = await res.json(); } catch(e) {}
+  if (!res.ok || data.ok === false) throw new Error(data.error || `Server error ${res.status}`);
+  return data;
+}
+
+async function submitPin(event) {
+  if (event) event.preventDefault();
+  const input = document.getElementById('pin-input');
+  const error = document.getElementById('pin-error');
+  const pin = (input ? input.value : '').trim();
+  if (!/^\d{4}$/.test(pin)) {
+    if (error) error.textContent = 'Enter your 4-digit PIN.';
+    return false;
+  }
+  if (error) error.textContent = 'Checking access…';
+  try {
+    currentStaffPin = pin;
+    const data = await apiCall('login', { method: 'POST', body: { pin } });
+    if (error) error.textContent = '';
+    if (input) input.value = '';
+    unlockApp(data.user, pin, true);
+    await loadFromTurso(true);
+  } catch (e) {
+    currentStaffPin = '';
+    if (error) error.textContent = e.message || 'Could not log in.';
+    if (input) { input.value = ''; input.focus(); }
+  }
+  return false;
+}
+
+function logoutUser() {
+  try {
+    localStorage.removeItem(STAFF_SESSION_KEY);
+    sessionStorage.removeItem(STAFF_PIN_SESSION_KEY);
+  } catch(e) {}
+  currentStaffPin = '';
+  setSignedUser(null);
+  document.body.classList.add('app-locked');
+  const gate = document.getElementById('pin-gate');
+  if (gate) gate.classList.remove('hidden');
+  const error = document.getElementById('pin-error');
+  if (error) error.textContent = '';
+  const input = document.getElementById('pin-input');
+  if (input) { input.value = ''; setTimeout(() => input.focus(), 50); }
+}
+
+function firstValue(row, names, def = '') {
+  const lower = {};
+  Object.keys(row || {}).forEach(k => { lower[String(k).toLowerCase().replace(/[ _-]+/g,'')] = row[k]; });
+  for (const n of names) {
+    const key = String(n).toLowerCase().replace(/[ _-]+/g,'');
+    if (lower[key] !== undefined && lower[key] !== null && lower[key] !== '') return lower[key];
+  }
+  return def;
+}
+
+function dbDate(v) {
+  if (!v) return '';
+  const s = String(v).trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) return m[1];
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) return d.toISOString().slice(0,10);
+  return s;
+}
+
+function inferSource(tableName, row) {
+  const business = String(firstValue(row, ['business','company','brand','source'], '')).toLowerCase();
+  const joined = `${String(tableName).toLowerCase()} ${business}`;
+  if (joined.includes('jump & bubble') || joined.includes('jump and bubble') || joined.includes('jab')) return 'jab';
+  if (joined.includes('bubble bounce') || joined.includes('bbb')) return 'bbb';
+  return 'jj';
+}
+
+function normalizeDbBooking(tableName, row, idx) {
+  const source = inferSource(tableName, row);
+  const rawId = firstValue(row, ['external_id','externalid','booking_id','bookingid','uuid','reference','ref','id'], `${tableName}_${idx}`);
+  const products = firstValue(row, ['products','product','product_name','castle','castle_hired','castle_name','item','items'], '');
+  const extrasRaw = firstValue(row, ['extras','add_ons','addons','extra_items'], '');
+  const extras = Array.isArray(extrasRaw) ? extrasRaw : String(extrasRaw || '').split(/\||,/).map(x=>x.trim()).filter(Boolean);
+  const statusRaw = String(firstValue(row, ['status','booking_status'], 'confirmed')).toLowerCase();
+  const status = ['confirmed','pending','done','cancelled'].includes(statusRaw) ? statusRaw : 'confirmed';
+  return {
+    id: rawId,
+    name: String(firstValue(row, ['customer','customer_name','client','client_name','name','full_name'], '')),
+    phone: String(firstValue(row, ['phone','phone_number','mobile','cell','telephone'], '')),
+    addr: String(firstValue(row, ['address','delivery_address','venue_address','location','venue'], '')),
+    date: dbDate(firstValue(row, ['date','delivery_date','booking_date','start_date','event_date'], '')),
+    edate: dbDate(firstValue(row, ['end_date','collection_date','collect_date','return_date'], firstValue(row, ['date','delivery_date','booking_date','start_date','event_date'], ''))),
+    status,
+    castleId: firstValue(row, ['castle_id','product_id','item_id'], null),
+    castleNameRaw: String(products || ''),
+    extras,
+    notes: String(firstValue(row, ['notes','general_notes','packing_notes','delivery_notes'], '')),
+    setup: String(firstValue(row, ['setup','setup_notes','setup_instructions'], '')),
+    balloonColors: String(firstValue(row, ['balloon_colours','balloon_colors','balloon_colour','balloon_color'], '')),
+    _delivTime: String(firstValue(row, ['delivery_time','deliver_time','dropoff_time','start_time','time'], '')),
+    _collectTime: String(firstValue(row, ['collection_time','collect_time','pickup_time','return_time'], '')),
+    _delivered: !!firstValue(row, ['delivered','is_delivered'], false),
+    _collected: !!firstValue(row, ['collected','is_collected'], false),
+    _hubNotes: String(firstValue(row, ['hub_notes','driver_notes'], '')),
+    _assignedDriver: String(firstValue(row, ['assigned_driver'], '')),
+    _assignedVehicle: String(firstValue(row, ['assigned_vehicle','vehicle','car'], '')),
+    _fromCSV: true,
+    _fromDb: true,
+    _dbTable: tableName,
+    _source: source,
+    _id: `${source}_${rawId}`
+  };
+}
+
+async function loadFromTurso(silent = false) {
+  const sub = document.getElementById('header-sub');
+  if (IS_PREVIEW) {
+    if (sub) sub.textContent = 'Preview mode · local test data only · PIN 4321';
+    syncAll(true);
+    return true;
+  }
+  if (sub) sub.textContent = 'Connecting to Turso…';
+  try {
+    const data = await apiCall('bookings');
+    const grouped = { jj: [], jab: [], bbb: [] };
+    let rowsSeen = 0;
+    (data.tables || []).forEach(t => {
+      (t.rows || []).forEach((row, i) => {
+        rowsSeen++;
+        const b = normalizeDbBooking(t.name, row, i);
+        // Only include rows that resemble bookings. This avoids pulling unrelated user/settings tables.
+        if (!b.date && !b.name && !b.addr && !b.castleNameRaw) return;
+        if (b._source === 'bbb') grouped.bbb.push(b);
+      });
+    });
+
+    // Turso is the source of truth across devices. Never merge stale browser cache
+    // back into a fresh database load, otherwise different devices can disagree.
+    importedJJ = [];
+    importedJAB = [];
+    importedBBB = grouped.bbb;
+
+    try {
+      localStorage.setItem('hub_jj', JSON.stringify(importedJJ));
+      localStorage.setItem('hub_jab', JSON.stringify(importedJAB));
+      localStorage.setItem('hub_bbb', JSON.stringify(importedBBB));
+      localStorage.setItem('hub_jj_label', 'Turso database');
+      localStorage.setItem('hub_jab_label', 'Turso database');
+      localStorage.setItem('hub_bbb_label', 'Turso database');
+      const now = new Date().toISOString();
+      localStorage.setItem('hub_jj_time', now); localStorage.setItem('hub_jab_time', now); localStorage.setItem('hub_bbb_time', now);
+    } catch(e) {}
+
+    syncAll(true);
+    const total = grouped.bbb.length;
+    if (sub) sub.textContent = `${total} booking${total !== 1 ? 's' : ''} from Turso · ${data.tables?.length || 0} table(s) checked`;
+    if (!silent) alert(`✅ Turso sync complete: ${total} booking${total !== 1 ? 's' : ''} loaded.`);
+    if (!total && rowsSeen) {
+      alert(`⚠️ Turso connected, but no rows matched the booking fields Delivery Dash recognises. Database tables found: ${(data.allTableNames || []).join(', ') || 'none'}`);
+    }
+    return true;
+  } catch (e) {
+    if (sub) sub.textContent = `Database error: ${e.message}`;
+    if (!silent) alert(`⚠️ Could not load Turso data: ${e.message}`);
+    return false;
+  }
+}
+
+async function restoreStaffSession() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STAFF_SESSION_KEY) || 'null');
+    const pin = sessionStorage.getItem(STAFF_PIN_SESSION_KEY) || '';
+    if (saved && saved.name && saved.role && pin) {
+      currentStaffPin = pin;
+      const data = await apiCall('login', { method: 'POST', body: { pin } });
+      unlockApp(data.user || saved, pin, false);
+      await loadFromTurso(true);
+      return true;
+    }
+  } catch(e) {
+    try { sessionStorage.removeItem(STAFF_PIN_SESSION_KEY); } catch(_) {}
+  }
+  setSignedUser(null);
+  const input = document.getElementById('pin-input');
+  if (input) setTimeout(() => input.focus(), 50);
+  return false;
+}
+
+// INIT
+initCalendar();
+loadPersistedImports();
+if (IS_PREVIEW) {
+  // Standalone preview: open directly into the app. The deployed Render app still requires PIN 4321.
+  currentStaffPin = '4321';
+  unlockApp({ name: 'Bubble Bounce Team', role: 'Staff' }, '4321', false);
+  const sub = document.getElementById('header-sub');
+  syncAll(true);
+  if (sub) sub.textContent = 'Preview mode · opens without login · local test data only';
+} else {
+  restoreStaffSession();
+}
+</script>
+</body>
+</html>
