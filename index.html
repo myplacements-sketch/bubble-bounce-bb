@@ -484,7 +484,7 @@
     </div>
     <div class="user-controls">
       <span class="user-pill" id="signed-user">🔒 Locked</span>
-      <button class="sync-btn" onclick="loadFromTurso(false)">🔄 Sync DB</button>
+      <button class="sync-btn" onclick="syncDbNow(false)">🔄 Sync DB</button>
       <button class="logout-btn" onclick="logoutUser()">Logout</button>
     </div>
   </div>
@@ -590,7 +590,9 @@
   <div style="margin-top:12px;">
     <div class="card" style="background:linear-gradient(135deg,#fff3e0,#fff8e1);border:none;">
       <div style="font-size:16px;font-weight:900;margin-bottom:5px;">📦 Packing List</div>
-      <div style="font-size:12px;color:#555;line-height:1.6;">Everything that must leave with each booking — main equipment, booked extras, motors/blowers and the standard setup kit. Tick items as they are physically packed.</div>
+      <div style="font-size:12px;color:#555;line-height:1.6;">Everything that must leave with each booking — main equipment, booked extras, motors/blowers and the standard setup kit. <strong>The packing checklist is shared through Turso</strong>, so everyone sees the same ticks after syncing.</div>
+      <button class="btn btn-blue" style="width:100%;margin-top:10px;" onclick="refreshSharedPacking()">🔄 Refresh Shared Packing from DB</button>
+      <div id="packing-db-status" style="font-size:11px;color:#777;text-align:center;margin-top:6px;">Shared Bubble Bounce Inflatables packing data</div>
     </div>
     <div class="card" style="background:#fff3cd;border:3px solid #f59e0b;text-align:center;padding:16px;margin-bottom:12px;">
       <div style="font-size:21px;font-weight:1000;color:#8a4b00;line-height:1.3;">⚠️ KEVIN — IMPORTANT PACKING REMINDER</div>
@@ -1164,6 +1166,10 @@ function openModal(uid) {
     <span class="badge badge-${b.status}" style="margin-left:6px;">${b.status}</span>
     ${stage !== 'cancelled' ? `<span class="badge badge-${stageMeta.cls}" style="margin-left:6px;">${stageMeta.label}</span>` : ''}
 
+    <div style="margin-top:12px;padding:11px 12px;border:2px solid #00a9b7;background:#e0f7fa;border-radius:10px;color:#075d66;font-size:12px;font-weight:800;line-height:1.5;">
+      🔄 <strong>AFTER UPDATING THIS CUSTOMER:</strong> Press <strong>Sync DB</strong> at the top of the app before moving to the next customer, so the whole Bubble Bounce Inflatables team sees the latest details.
+    </div>
+
     <div style="margin-top:12px;">
       <div class="detail-row"><span class="detail-label">📅 Date</span><span class="detail-value">${formatDateNice(b.date)}${b.edate && b.edate !== b.date ? ' → ' + formatDateNice(b.edate) : ''}</span></div>
       <div class="detail-row"><span class="detail-label">📞 Phone</span><span class="detail-value">${b.phone || '—'}</span></div>
@@ -1198,6 +1204,7 @@ function openModal(uid) {
       <button class="logistics-btn ${b._collected ? 'on-purple' : 'off-purple'}" onclick="markCollected('${b._id}')">${b._collected ? '✅ Collected' : '🔄 Mark Collected'}</button>
     </div>
 
+    <button onclick="syncCustomerAndClose()" class="btn btn-blue" style="width:100%;margin-top:12px;font-weight:900;">🔄 Sync DB After This Customer</button>
     <button onclick="closeModalBtn()" class="btn btn-gray" style="width:100%;margin-top:8px;">Close</button>
   `;
 
@@ -1293,10 +1300,10 @@ function updateBookingField(uid, field, val) {
     try { localStorage.setItem('hub_bbb', JSON.stringify(importedBBB)); } catch(e) {}
   }
   if (currentStaffPin && ['_delivTime','_collectTime','_delivered','_collected','_hubNotes','_assignedDriver','_assignedVehicle','status'].includes(field)) {
-    apiCall('update-booking', {
+    trackDbWrite(apiCall('update-booking', {
       method: 'POST',
       body: { externalId: b.id, field, value: val }
-    }).catch(err => console.warn('Bubble Bounce Turso booking update failed:', err));
+    }).catch(err => { console.warn('Bubble Bounce Turso booking update failed:', err); throw err; }));
   }
 }
 
@@ -1649,7 +1656,10 @@ function showTab(t, el) {
     const tab = document.querySelector(`.tab[data-tab="${t}"]`);
     if (tab) tab.classList.add('active');
   }
-  if (t === 'packing') renderPacking();
+  if (t === 'packing') {
+    if (!IS_PREVIEW && currentStaffPin) refreshSharedPacking();
+    else renderPacking();
+  }
   if (t === 'drivers') renderDrivers();
 }
 
@@ -2101,20 +2111,60 @@ function renderDrivers(){
 
 // Packing rules are deliberately conservative: booked products/extras are always
 // shown, and inflatable-type bookings also receive the standard setup/safety kit.
-function packKey(b, item) {
-  return 'dd_pack_' + encodeURIComponent((b._id || b.id || '') + '|' + item);
+let packingChecks = {};
+
+function packingItemKey(item) {
+  if (typeof item === 'string') return item;
+  return `${String(item?.cat || 'Item')}|${String(item?.name || '')}`;
 }
-function packChecked(b,item) { return localStorage.getItem(packKey(b,item)) === '1'; }
-function togglePack(bid,item,checked) {
+function packingStateKey(b,item) {
+  return `${String(b?.id || b?.external_id || '')}||${packingItemKey(item)}`;
+}
+function packChecked(b,item) {
+  return !!packingChecks[packingStateKey(b,item)];
+}
+function rememberPackingChecks(rows) {
+  const next = {};
+  (Array.isArray(rows) ? rows : []).forEach(r => {
+    const bookingId = String(r.booking_external_id || '').trim();
+    const itemKey = String(r.item_key || '').trim();
+    if (bookingId && itemKey) next[`${bookingId}||${itemKey}`] = !!Number(r.checked);
+  });
+  packingChecks = next;
+  if (IS_PREVIEW) { try { localStorage.setItem('bb_preview_packing_checks', JSON.stringify(packingChecks)); } catch(e) {} }
+}
+async function togglePack(bid,itemKey,checked) {
   const b=allBookings.find(x=>String(x._id||x.id)===String(bid)); if(!b)return;
-  localStorage.setItem(packKey(b,item), checked?'1':'0');
+  const key = `${String(b.id)}||${String(itemKey)}`;
+  packingChecks[key] = !!checked;
+  if (IS_PREVIEW) {
+    try { localStorage.setItem('bb_preview_packing_checks', JSON.stringify(packingChecks)); } catch(e) {}
+    renderPacking();
+    return;
+  }
   renderPacking();
+  if (currentStaffPin) {
+    const write = apiCall('update-packing-check', { method:'POST', body:{ externalId:b.id, itemKey, checked:!!checked } })
+      .catch(err => { console.warn('Shared packing update failed:', err); throw err; });
+    trackDbWrite(write);
+  }
 }
-function resetPackingChecks(){
-  if(!confirm('Reset all packing ticks on this device?')) return;
-  Object.keys(localStorage).filter(k=>k.startsWith('dd_pack_')).forEach(k=>localStorage.removeItem(k));
+async function resetPackingChecks(){
+  const from=document.getElementById('pack-from')?.value || '';
+  const to=document.getElementById('pack-to')?.value || from;
+  const bookings=allBookings.filter(b=>b.status!=='cancelled'&&b.date&&b.date>=from&&b.date<=to);
+  if(!bookings.length) return;
+  if(!confirm('Reset the shared packing ticks for the bookings in this date range? This will reset them for everyone.')) return;
+  const ids=[...new Set(bookings.map(b=>String(b.id)).filter(Boolean))];
+  ids.forEach(id => { Object.keys(packingChecks).filter(k=>k.startsWith(id+'||')).forEach(k=>delete packingChecks[k]); });
   renderPacking();
+  if(IS_PREVIEW){ try{localStorage.setItem('bb_preview_packing_checks',JSON.stringify(packingChecks));}catch(e){} return; }
+  try {
+    await trackDbWrite(apiCall('reset-packing-checks',{method:'POST',body:{externalIds:ids}}));
+    await refreshSharedPacking(true);
+  } catch(e) { alert('⚠️ Could not reset shared packing ticks: '+e.message); }
 }
+
 function packingQtyLabel(raw){
   const s=String(raw||'').trim();
   // Quantity only when a number is followed by whitespace (e.g. 100 Balloons)
@@ -2221,8 +2271,8 @@ function renderPacking(){
       lastVehicle=vehicle;
     }
     const items=packingItemsForBooking(b);
-    const complete=items.length && items.every(x=>packChecked(b,x.name));
-    total+=items.length; done+=items.filter(x=>packChecked(b,x.name)).length;
+    const complete=items.length && items.every(x=>packChecked(b,x));
+    total+=items.length; done+=items.filter(x=>packChecked(b,x)).length;
     const bid=String(b._id||b.id||'').replace(/'/g,'');
     out+=`<div class="pack-booking ${complete?'pack-complete':''}">
       <div class="pack-head">
@@ -2236,8 +2286,8 @@ function renderPacking(){
     cats.forEach(cat=>{
       out+=`<div class="pack-section"><div class="pack-section-title">${escHtml(cat)}</div>`;
       items.filter(x=>x.cat===cat).forEach(x=>{
-        const checked=packChecked(b,x.name);
-        out+=`<label class="pack-row"><input class="pack-check" type="checkbox" ${checked?'checked':''} onchange="togglePack('${bid}',decodeURIComponent('${encodeURIComponent(x.name)}'),this.checked)">
+        const checked=packChecked(b,x);
+        out+=`<label class="pack-row"><input class="pack-check" type="checkbox" ${checked?'checked':''} onchange="togglePack('${bid}',decodeURIComponent('${encodeURIComponent(packingItemKey(x))}'),this.checked)">
           <span class="pack-qty">${escHtml(x.qty)}</span><span style="${checked?'text-decoration:line-through;color:#888;':''}">${escHtml(x.name)}</span></label>`;
       });
       out+='</div>';
@@ -2251,7 +2301,7 @@ function renderPacking(){
     }
     out+='</div>';
   });
-  summary.innerHTML=`<div class="pack-summary"><strong>${bookings.length} booking${bookings.length!==1?'s':''}</strong> to pack • <strong>${done}/${total}</strong> checklist items ticked.<br><span style="color:#777;">Kevin's list is pulled from every non-cancelled delivery booking in this date range. Each booking shows the vehicle it must be packed into — independent of driver assignment. Main booked equipment, extras and balloon requirements are included, with standard setup/safety kit added for inflatable bookings.</span></div>`;
+  summary.innerHTML=`<div class="pack-summary"><strong>${bookings.length} booking${bookings.length!==1?'s':''}</strong> to pack • <strong>${done}/${total}</strong> checklist items ticked.<br><span style="color:#777;">Kevin's list is pulled from the shared Turso database for every non-cancelled delivery booking in this date range. Packing ticks are shared between devices. Each booking shows the vehicle it must be packed into — independent of driver assignment. Main booked equipment, extras and balloon requirements are included, with standard setup/safety kit added for inflatable bookings.</span></div>`;
   list.innerHTML=out;
 }
 
@@ -2259,6 +2309,46 @@ function renderPacking(){
 const STAFF_SESSION_KEY = 'delivery_hub_staff_session_v2';
 const STAFF_PIN_SESSION_KEY = 'delivery_hub_staff_pin_v1';
 let currentStaffPin = '';
+const pendingDbWrites = new Set();
+function trackDbWrite(promise) {
+  if (!promise || typeof promise.then !== 'function') return promise;
+  pendingDbWrites.add(promise);
+  // Attach both success and failure handlers without creating an unhandled rejected
+  // finally-chain. Sync DB waits for any writes still in this set.
+  promise.then(
+    () => pendingDbWrites.delete(promise),
+    () => pendingDbWrites.delete(promise)
+  );
+  return promise;
+}
+async function flushDbWrites() {
+  if (!pendingDbWrites.size) return;
+  await Promise.allSettled([...pendingDbWrites]);
+}
+async function syncDbNow(silent=false) {
+  await flushDbWrites();
+  return loadFromTurso(silent);
+}
+async function syncCustomerAndClose() {
+  closeModalBtn();
+  await syncDbNow(false);
+}
+async function refreshSharedPacking(silent=false) {
+  const status=document.getElementById('packing-db-status');
+  if (IS_PREVIEW) {
+    try { packingChecks=JSON.parse(localStorage.getItem('bb_preview_packing_checks')||'{}')||{}; } catch(e) { packingChecks={}; }
+    if(status) status.textContent='Preview mode · packing ticks are local test data';
+    renderPacking();
+    return true;
+  }
+  if(status) status.textContent='⏳ Refreshing shared packing from Turso…';
+  await flushDbWrites();
+  const ok=await loadFromTurso(true);
+  if(status) status.textContent=ok?'✅ Shared packing refreshed from Turso for the Bubble Bounce Inflatables team':'⚠️ Could not refresh shared packing from Turso';
+  renderPacking();
+  if(!silent && ok) { /* no extra alert; load is silent */ }
+  return ok;
+}
 
 function setSignedUser(user) {
   const el = document.getElementById('signed-user');
@@ -2420,6 +2510,7 @@ async function loadFromTurso(silent = false) {
   try {
     const data = await apiCall('bookings');
     transportSlots = normalizeTransportSlots(data.transportSlots || transportSlots);
+    rememberPackingChecks(data.packingChecks || []);
     try { localStorage.setItem('bb_transport_slots', JSON.stringify(transportSlots)); } catch(e) {}
     const bookings=[];
     let rowsSeen=0;
@@ -2475,6 +2566,7 @@ initCalendar();
 loadPersistedTransportSettings();
 loadPersistedImports();
 if (IS_PREVIEW) {
+  try { packingChecks=JSON.parse(localStorage.getItem('bb_preview_packing_checks')||'{}')||{}; } catch(e) { packingChecks={}; }
   // Standalone preview: open directly into the app. The deployed Render app still requires PIN 4321.
   currentStaffPin = '4321';
   unlockApp({ name: 'Bubble Bounce Team', role: 'Staff' }, '4321', false);

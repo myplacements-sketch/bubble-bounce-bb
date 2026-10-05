@@ -2,7 +2,7 @@
   "name": "bubble-bounce-inflatables-delivery-hub",
   "version": "1.6.0",
   "private": true,
-  "description": "Bubble Bounce Inflatables Delivery Hub for Render with Turso persistence, manual last-minute bookings, saved driver/vehicle names, manual allocation, and packing workflow",
+  "description": "Bubble Bounce Inflatables Delivery Hub for Render with Turso bookings, shared packing checklist, persistent drivers/vehicles, and manual booking workflow",
   "main": "server.js",
   "engines": {
     "node": ">=18"

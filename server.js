@@ -86,6 +86,15 @@ async function ensureSchema(client) {
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  // Shared Kevin packing checklist. Every device reads/writes the same Turso rows.
+  await client.execute(`CREATE TABLE IF NOT EXISTS packing_checks (
+    booking_external_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    checked INTEGER NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (booking_external_id, item_key)
+  )`);
+
   try { await client.execute("ALTER TABLE bookings ADD COLUMN assigned_driver TEXT DEFAULT ''"); } catch (_) {}
   try { await client.execute("ALTER TABLE bookings ADD COLUMN assigned_vehicle TEXT DEFAULT ''"); } catch (_) {}
 
@@ -104,6 +113,7 @@ async function ensureSchema(client) {
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(booking_date)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_bookings_business ON bookings(business)');
+  await client.execute('CREATE INDEX IF NOT EXISTS idx_packing_booking ON packing_checks(booking_external_id)');
 }
 
 async function listTables(client) {
@@ -138,13 +148,51 @@ async function saveTransportSlots(client, slots) {
   return readTransportSlots(client);
 }
 
+async function readPackingChecks(client) {
+  const rs = await client.execute('SELECT booking_external_id, item_key, checked, updated_at FROM packing_checks ORDER BY booking_external_id, item_key');
+  return rs.rows.map(r => ({
+    booking_external_id: text(r[0]),
+    item_key: text(r[1]),
+    checked: boolInt(r[2]),
+    updated_at: text(r[3])
+  }));
+}
+
+async function updatePackingCheck(client, externalId, itemKey, checked) {
+  const bookingId = text(externalId).trim();
+  const key = text(itemKey).trim();
+  if (!bookingId) throw new Error('Missing booking for packing check.');
+  if (!key) throw new Error('Missing packing item.');
+  if (bookingId.length > 300 || key.length > 600) throw new Error('Packing item is too long.');
+  await client.execute({
+    sql: `INSERT INTO packing_checks (booking_external_id, item_key, checked, updated_at)
+          VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+          ON CONFLICT(booking_external_id, item_key) DO UPDATE SET
+            checked=excluded.checked, updated_at=CURRENT_TIMESTAMP`,
+    args: [bookingId, key, boolInt(checked)]
+  });
+  return true;
+}
+
+async function resetPackingChecks(client, externalIds) {
+  const ids = [...new Set((Array.isArray(externalIds) ? externalIds : []).map(x => text(x).trim()).filter(Boolean))].slice(0, 1000);
+  if (!ids.length) return 0;
+  const placeholders = ids.map(() => '?').join(',');
+  const rs = await client.execute({
+    sql: `DELETE FROM packing_checks WHERE booking_external_id IN (${placeholders})`,
+    args: ids
+  });
+  return Number(rs.rowsAffected || 0);
+}
+
 async function readBookingTable(client) {
   const rs = await client.execute("SELECT * FROM bookings WHERE business = 'bbb' ORDER BY booking_date DESC, id DESC LIMIT 3000");
   const columns = rs.columns.map(String);
   return {
     allTableNames: await listTables(client),
     tables: [{ name: 'bookings', columns, rows: rs.rows.map(r => rowToObject(r, columns)) }],
-    transportSlots: await readTransportSlots(client)
+    transportSlots: await readTransportSlots(client),
+    packingChecks: await readPackingChecks(client)
   };
 }
 
@@ -246,7 +294,9 @@ async function healthPayload() {
   const names = await listTables(client);
   const countRs = await client.execute("SELECT COUNT(*) AS n FROM bookings WHERE business = 'bbb'");
   const bookingCount = Number(countRs.rows[0]?.[0] || 0);
-  return { ok: true, database: true, tables: names, bookingCount, schemaReady: true };
+  const packRs = await client.execute('SELECT COUNT(*) AS n FROM packing_checks');
+  const packingCheckCount = Number(packRs.rows[0]?.[0] || 0);
+  return { ok: true, database: true, tables: names, bookingCount, packingCheckCount, schemaReady: true };
 }
 
 app.get('/healthz', (req, res) => res.status(200).json({ ok: true, service: 'bubble-bounce-delivery-hub' }));
@@ -295,6 +345,19 @@ app.all('/api', async (req, res) => {
       return res.json({ ok: true, changed });
     }
 
+    if (action === 'update-packing-check') {
+      if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
+      const { externalId, itemKey, checked } = req.body || {};
+      await updatePackingCheck(client, externalId, itemKey, checked);
+      return res.json({ ok: true, externalId: text(externalId), itemKey: text(itemKey), checked: boolInt(checked) });
+    }
+
+    if (action === 'reset-packing-checks') {
+      if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
+      const deleted = await resetPackingChecks(client, req.body?.externalIds || []);
+      return res.json({ ok: true, deleted });
+    }
+
     if (action === 'save-transport-settings') {
       if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
       const slots = await saveTransportSlots(client, req.body?.slots || []);
@@ -306,6 +369,7 @@ app.all('/api', async (req, res) => {
       const beforeRs = await client.execute("SELECT COUNT(*) AS n FROM bookings WHERE business = 'bbb'");
       const deleted = Number(beforeRs.rows[0]?.[0] || 0);
       await client.execute("DELETE FROM bookings WHERE business = 'bbb'");
+      await client.execute('DELETE FROM packing_checks');
       return res.json({ ok: true, deleted });
     }
 
@@ -326,7 +390,7 @@ app.listen(PORT, '0.0.0.0', async () => {
   try {
     const client = dbClient();
     await ensureSchema(client);
-    console.log('Turso schema ready: Bubble Bounce bookings, stock and transport slots checked/created.');
+    console.log('Turso schema ready: Bubble Bounce bookings, shared packing checks, stock and transport slots checked/created.');
   } catch (err) {
     console.error('Startup database/schema check failed:', err.message || err);
   }
