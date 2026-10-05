@@ -5,10 +5,10 @@ const { createClient } = require('@libsql/client');
 const app = express();
 app.use(express.json({ limit: '4mb' }));
 
+// Bubble Bounce has one general PIN for the whole team.
 const GENERAL_PIN = '4321';
 
 function getIdentity(pin) {
-  // Bubble Bounce uses one general PIN for everyone. No legacy staff PINs are accepted.
   if (String(pin || '').trim() !== GENERAL_PIN) return null;
   return { name: 'Bubble Bounce Team', role: 'Staff' };
 }
@@ -16,8 +16,8 @@ function getIdentity(pin) {
 function dbClient() {
   const url = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN || process.env.TURSO_TOKEN;
-  if (!url) throw new Error('Missing TURSO_DATABASE_URL (or TURSO_URL)');
-  if (!authToken) throw new Error('Missing TURSO_AUTH_TOKEN (or TURSO_TOKEN)');
+  if (!url) throw new Error('Missing TURSO_DATABASE_URL');
+  if (!authToken) throw new Error('Missing TURSO_AUTH_TOKEN');
   return createClient({ url, authToken });
 }
 
@@ -32,6 +32,9 @@ function rowToObject(row, columns) {
   columns.forEach((c, i) => { obj[c] = scalar(row[i]); });
   return obj;
 }
+
+function text(v) { return v === undefined || v === null ? '' : String(v); }
+function boolInt(v) { return v === true || v === 1 || v === '1' || String(v).toLowerCase() === 'true' ? 1 : 0; }
 
 async function ensureSchema(client) {
   await client.execute(`CREATE TABLE IF NOT EXISTS bookings (
@@ -74,8 +77,30 @@ async function ensureSchema(client) {
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  // Four stable driver/vehicle slots. The names can be changed in the Drivers tab,
+  // while bookings stay linked to the slot (driver-1 / vehicle-1 etc.).
+  await client.execute(`CREATE TABLE IF NOT EXISTS transport_slots (
+    slot INTEGER PRIMARY KEY,
+    driver_name TEXT DEFAULT '',
+    vehicle_name TEXT DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+
   try { await client.execute("ALTER TABLE bookings ADD COLUMN assigned_driver TEXT DEFAULT ''"); } catch (_) {}
   try { await client.execute("ALTER TABLE bookings ADD COLUMN assigned_vehicle TEXT DEFAULT ''"); } catch (_) {}
+
+  const defaults = [
+    [1, '', 'Bantam'],
+    [2, '', 'Vehicle 2'],
+    [3, '', 'Vehicle 3'],
+    [4, '', 'Vehicle 4']
+  ];
+  for (const [slot, driver, vehicle] of defaults) {
+    await client.execute({
+      sql: `INSERT OR IGNORE INTO transport_slots (slot, driver_name, vehicle_name) VALUES (?, ?, ?)`,
+      args: [slot, driver, vehicle]
+    });
+  }
 
   await client.execute('CREATE INDEX IF NOT EXISTS idx_bookings_date ON bookings(booking_date)');
   await client.execute('CREATE INDEX IF NOT EXISTS idx_bookings_business ON bookings(business)');
@@ -86,24 +111,49 @@ async function listTables(client) {
   return rs.rows.map(r => String(r[0]));
 }
 
+async function readTransportSlots(client) {
+  const rs = await client.execute('SELECT slot, driver_name, vehicle_name FROM transport_slots ORDER BY slot');
+  return rs.rows.map(r => ({
+    slot: Number(r[0]),
+    driver_name: text(r[1]),
+    vehicle_name: text(r[2])
+  }));
+}
+
+async function saveTransportSlots(client, slots) {
+  const safe = Array.isArray(slots) ? slots : [];
+  for (const s of safe) {
+    const slot = Number(s.slot);
+    if (![1, 2, 3, 4].includes(slot)) continue;
+    await client.execute({
+      sql: `INSERT INTO transport_slots (slot, driver_name, vehicle_name, updated_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(slot) DO UPDATE SET
+              driver_name=excluded.driver_name,
+              vehicle_name=excluded.vehicle_name,
+              updated_at=CURRENT_TIMESTAMP`,
+      args: [slot, text(s.driver_name).trim(), text(s.vehicle_name).trim()]
+    });
+  }
+  return readTransportSlots(client);
+}
+
 async function readBookingTable(client) {
-  const rs = await client.execute('SELECT * FROM bookings ORDER BY booking_date DESC, id DESC LIMIT 3000');
+  const rs = await client.execute("SELECT * FROM bookings WHERE business = 'bbb' ORDER BY booking_date DESC, id DESC LIMIT 3000");
   const columns = rs.columns.map(String);
   return {
     allTableNames: await listTables(client),
-    tables: [{ name: 'bookings', columns, rows: rs.rows.map(r => rowToObject(r, columns)) }]
+    tables: [{ name: 'bookings', columns, rows: rs.rows.map(r => rowToObject(r, columns)) }],
+    transportSlots: await readTransportSlots(client)
   };
 }
 
-function text(v) { return v === undefined || v === null ? '' : String(v); }
-function boolInt(v) { return v === true || v === 1 || v === '1' || String(v).toLowerCase() === 'true' ? 1 : 0; }
-
-function bookingParams(source, b, index) {
-  const externalId = text(b.id ?? b.external_id ?? b._id ?? index);
+function bookingParams(b, index) {
+  const externalId = text(b.id ?? b.external_id ?? b._id ?? `manual-${Date.now()}-${index}`);
   const extras = Array.isArray(b.extras) ? b.extras.join('|') : text(b.extras);
   return {
     external_id: externalId,
-    business: text(source || b._source || b.business || 'bbb'),
+    business: 'bbb',
     customer_name: text(b.name ?? b.customer_name),
     phone: text(b.phone),
     address: text(b.addr ?? b.address),
@@ -125,10 +175,10 @@ function bookingParams(source, b, index) {
   };
 }
 
-async function upsertBookings(client, source, bookings) {
+async function upsertBookings(client, bookings) {
   let saved = 0;
   for (let i = 0; i < bookings.length; i++) {
-    const p = bookingParams(source, bookings[i], i);
+    const p = bookingParams(bookings[i], i);
     await client.execute({
       sql: `INSERT INTO bookings (
         external_id,business,customer_name,phone,address,booking_date,collection_date,status,
@@ -149,11 +199,12 @@ async function upsertBookings(client, source, bookings) {
         balloon_colors=excluded.balloon_colors,
         delivery_time=excluded.delivery_time,
         collection_time=excluded.collection_time,
-        delivered=excluded.delivered,
-        collected=excluded.collected,
-        hub_notes=excluded.hub_notes,
-        assigned_driver=CASE WHEN excluded.assigned_driver <> '' THEN excluded.assigned_driver ELSE bookings.assigned_driver END,
-        assigned_vehicle=CASE WHEN excluded.assigned_vehicle <> '' THEN excluded.assigned_vehicle ELSE bookings.assigned_vehicle END,
+        -- Operational progress must survive a CSV re-import.
+        delivered=bookings.delivered,
+        collected=bookings.collected,
+        hub_notes=CASE WHEN bookings.hub_notes <> '' THEN bookings.hub_notes ELSE excluded.hub_notes END,
+        assigned_driver=CASE WHEN bookings.assigned_driver <> '' THEN bookings.assigned_driver ELSE excluded.assigned_driver END,
+        assigned_vehicle=CASE WHEN bookings.assigned_vehicle <> '' THEN bookings.assigned_vehicle ELSE excluded.assigned_vehicle END,
         updated_at=CURRENT_TIMESTAMP`,
       args: [
         p.external_id,p.business,p.customer_name,p.phone,p.address,p.booking_date,p.collection_date,p.status,
@@ -177,13 +228,13 @@ const editableFieldMap = {
   status: 'status'
 };
 
-async function updateBookingFieldInDb(client, source, externalId, field, value) {
+async function updateBookingFieldInDb(client, externalId, field, value) {
   const col = editableFieldMap[field];
   if (!col) throw new Error('This booking field is not allowed to sync.');
   const val = (field === '_delivered' || field === '_collected') ? boolInt(value) : text(value);
   const rs = await client.execute({
-    sql: `UPDATE bookings SET "${col}" = ?, updated_at = CURRENT_TIMESTAMP WHERE business = ? AND external_id = ?`,
-    args: [val, text(source), text(externalId)]
+    sql: `UPDATE bookings SET "${col}" = ?, updated_at = CURRENT_TIMESTAMP WHERE business = 'bbb' AND external_id = ?`,
+    args: [val, text(externalId)]
   });
   return Number(rs.rowsAffected || 0);
 }
@@ -193,7 +244,7 @@ async function healthPayload() {
   await client.execute('SELECT 1 AS ok');
   await ensureSchema(client);
   const names = await listTables(client);
-  const countRs = await client.execute('SELECT COUNT(*) AS n FROM bookings');
+  const countRs = await client.execute("SELECT COUNT(*) AS n FROM bookings WHERE business = 'bbb'");
   const bookingCount = Number(countRs.rows[0]?.[0] || 0);
   return { ok: true, database: true, tables: names, bookingCount, schemaReady: true };
 }
@@ -216,14 +267,10 @@ app.all('/api', async (req, res) => {
 
     const pin = req.get('X-App-Pin') || (req.body && req.body.pin) || '';
     const identity = getIdentity(pin);
-    if (identity && identity.configError) return res.status(500).json({ ok: false, error: identity.configError });
     if (!identity) return res.status(401).json({ ok: false, error: 'Incorrect PIN' });
 
-    // PIN validation must not depend on Turso being available. This lets staff log in
-    // and lets the app show a useful database error separately if Turso is offline.
-    if (action === 'login') {
-      return res.json({ ok: true, user: identity });
-    }
+    // Login is independent of Turso so a database outage does not look like a PIN error.
+    if (action === 'login') return res.json({ ok: true, user: identity });
 
     const client = dbClient();
     await ensureSchema(client);
@@ -235,51 +282,51 @@ app.all('/api', async (req, res) => {
 
     if (action === 'save-bookings') {
       if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
-      const source = text(req.body?.source || 'bbb');
       const bookings = Array.isArray(req.body?.bookings) ? req.body.bookings : [];
-      if (source !== 'bbb') return res.status(400).json({ ok: false, error: 'This dashboard only accepts Bubble Bounce bookings.' });
       if (bookings.length > 3000) return res.status(413).json({ ok: false, error: 'Too many bookings in one sync' });
-      const saved = await upsertBookings(client, source, bookings);
-      return res.json({ ok: true, saved, source });
+      const saved = await upsertBookings(client, bookings);
+      return res.json({ ok: true, saved, source: 'bbb' });
     }
 
     if (action === 'update-booking') {
       if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
-      const { source, externalId, field, value } = req.body || {};
-      if (text(source) !== 'bbb') return res.status(400).json({ ok: false, error: 'This dashboard only accepts Bubble Bounce bookings.' });
-      const changed = await updateBookingFieldInDb(client, source, externalId, field, value);
+      const { externalId, field, value } = req.body || {};
+      const changed = await updateBookingFieldInDb(client, externalId, field, value);
       return res.json({ ok: true, changed });
+    }
+
+    if (action === 'save-transport-settings') {
+      if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
+      const slots = await saveTransportSlots(client, req.body?.slots || []);
+      return res.json({ ok: true, slots });
     }
 
     if (action === 'clear-bookings') {
       if (req.method !== 'POST') return res.status(405).json({ ok: false, error: 'POST required' });
-      const beforeRs = await client.execute('SELECT COUNT(*) AS n FROM bookings');
+      const beforeRs = await client.execute("SELECT COUNT(*) AS n FROM bookings WHERE business = 'bbb'");
       const deleted = Number(beforeRs.rows[0]?.[0] || 0);
-      await client.execute('DELETE FROM bookings');
-      // Reset AUTOINCREMENT only when SQLite has created the sequence table.
-      try { await client.execute("DELETE FROM sqlite_sequence WHERE name='bookings'"); } catch (_) {}
+      await client.execute("DELETE FROM bookings WHERE business = 'bbb'");
       return res.json({ ok: true, deleted });
     }
 
     return res.status(404).json({ ok: false, error: 'Unknown action' });
   } catch (err) {
-    console.error('Delivery Dash API error:', err);
+    console.error('Bubble Bounce Delivery Hub API error:', err);
     return res.status(500).json({ ok: false, error: err.message || 'Server error', type: err.name || 'Error' });
   }
 });
 
-// Single-file frontend: serve only index.html. Do not expose server.js, package.json,
-// deployment notes, or other repository files through the public web service.
+// Serve only the Bubble Bounce app page. Repository files are not public.
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 const PORT = Number(process.env.PORT || 10000);
 app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`Delivery Dash running on port ${PORT}`);
+  console.log(`Bubble Bounce Delivery Hub running on port ${PORT}`);
   try {
     const client = dbClient();
     await ensureSchema(client);
-    console.log('Turso schema ready: bookings + stock tables checked/created.');
+    console.log('Turso schema ready: Bubble Bounce bookings, stock and transport slots checked/created.');
   } catch (err) {
     console.error('Startup database/schema check failed:', err.message || err);
   }

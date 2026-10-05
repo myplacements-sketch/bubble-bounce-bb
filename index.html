@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🚚 Delivery Dashboard</title>
+<title>🫧 Bubble Bounce Inflatables Delivery Hub</title>
 <style>
   :root {
     --pink: #00a9b7;
@@ -119,8 +119,6 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
-  .src-jj { background: #fff3e0; color: #e65100; }
-  .src-jab { background: #fce4f3; color: #880e4f; }
   .src-bbb { background: #e8f5e9; color: #1b5e20; }
 
   /* STATUS BADGES */
@@ -275,13 +273,13 @@
     text-align: center;
     box-shadow: var(--shadow);
   }
-  .source-card.jj { background: #fff8f0; border: 2px solid #ffcc80; }
-  .source-card.jab { background: #fdf0f8; border: 2px solid #f48fb1; }
+  .source-card.allocation-driver { background: #fff8f0; border: 2px solid #ffcc80; }
+  .source-card.allocation-vehicle { background: #fdf0f8; border: 2px solid #f48fb1; }
   .source-card.bbb { background: #f0fdf4; border: 2px solid #a5d6a7; }
   .source-num { font-size: 24px; font-weight: 900; }
   .source-name { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; margin-top: 2px; color: var(--gray); }
-  .source-card.jj .source-num { color: #e65100; }
-  .source-card.jab .source-num { color: #880e4f; }
+  .source-card.allocation-driver .source-num { color: #e65100; }
+  .source-card.allocation-vehicle .source-num { color: #880e4f; }
   .source-card.bbb .source-num { color: #1b5e20; }
 
   /* WEEKEND SECTION */
@@ -467,11 +465,11 @@
 <div class="pin-gate" id="pin-gate">
   <div class="pin-card">
     <div class="pin-logo">🚚</div>
-    <div class="pin-title">Bubble Bounce Delivery Hub</div>
+    <div class="pin-title">Bubble Bounce Inflatables Delivery Hub</div>
     <div class="pin-sub">Enter your 4-digit staff PIN to continue.</div>
     <form onsubmit="return submitPin(event)">
       <input id="pin-input" class="pin-input" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="4-digit PIN" placeholder="••••">
-      <button class="pin-submit" type="submit">Unlock Bubble Bounce Hub</button>
+      <button class="pin-submit" type="submit">Unlock Bubble Bounce Inflatables Hub</button>
     </form>
     <div class="pin-error" id="pin-error"></div>
   </div>
@@ -481,7 +479,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>🫧 Bubble Bounce Delivery Hub</h1>
+      <h1>🫧 Bubble Bounce Inflatables Delivery Hub</h1>
       <div class="header-sub" id="header-sub">Loading bookings...</div>
     </div>
     <div class="user-controls">
@@ -494,11 +492,11 @@
 
 <div class="tabs">
   <div class="tab active" onclick="showTab('dashboard',this)" data-tab="dashboard"><span class="tab-icon">🏠</span>Home</div>
+  <div class="tab" onclick="showTab('calendar',this)" data-tab="calendar"><span class="tab-icon">📅</span>Calendar</div>
+  <div class="tab" onclick="showTab('all',this)" data-tab="all"><span class="tab-icon">📋</span>All</div>
   <div class="tab" onclick="showTab('weekend',this)" data-tab="weekend"><span class="tab-icon">🚚</span>Weekend</div>
   <div class="tab" onclick="showTab('drivers',this)" data-tab="drivers"><span class="tab-icon">👥</span>Drivers</div>
   <div class="tab" onclick="showTab('packing',this)" data-tab="packing"><span class="tab-icon">📦</span>Packing</div>
-  <div class="tab" onclick="showTab('calendar',this)" data-tab="calendar"><span class="tab-icon">📅</span>Calendar</div>
-  <div class="tab" onclick="showTab('all',this)" data-tab="all"><span class="tab-icon">📋</span>All</div>
   <div class="tab" onclick="showTab('import',this)" data-tab="import"><span class="tab-icon">📲</span>Import</div>
 </div>
 
@@ -537,16 +535,20 @@
   <div class="source-cards">
     <div class="source-card bbb">
       <div class="source-num" id="src-bbb">0</div>
-      <div class="source-name">Bubble Bounce Bookings</div>
+      <div class="source-name">Bubble Bounce Inflatables Bookings</div>
     </div>
-    <div class="source-card jj" style="border-color:#ffb74d;">
+    <div class="source-card allocation-driver" style="border-color:#ffb74d;">
       <div class="source-num" id="unassigned-driver-count">0</div>
       <div class="source-name">Driver Not Assigned</div>
     </div>
-    <div class="source-card jab" style="border-color:#ce93d8;">
+    <div class="source-card allocation-vehicle" style="border-color:#ce93d8;">
       <div class="source-num" id="unassigned-vehicle-count">0</div>
       <div class="source-name">Vehicle Not Assigned</div>
     </div>
+  </div>
+
+  <div style="margin:14px 0 4px;">
+    <button class="btn btn-pink" style="width:100%;padding:14px;font-size:15px;border-radius:12px;" onclick="openManualBookingModal()">➕ Add Last-Minute Booking</button>
   </div>
 
   <div class="section-title">Upcoming Bookings</div>
@@ -570,8 +572,14 @@
 <div class="page" id="page-drivers">
   <div style="margin-top:12px;">
     <div class="card" style="background:linear-gradient(135deg,#e0f7fa,#fce4ec);border:none;">
-      <div style="font-size:17px;font-weight:900;margin-bottom:5px;">👥 Driver Deliveries</div>
-      <div style="font-size:12px;color:#555;line-height:1.6;">Bookings stay Unassigned until you manually choose Driver 1, 2, 3 or 4 on Home. Once you assign one, it appears under that driver's Friday, Saturday, Sunday or Monday section. You can move it to another driver at any time.</div>
+      <div style="font-size:17px;font-weight:900;margin-bottom:5px;">👥 Bubble Bounce Inflatables Drivers & Vehicles</div>
+      <div style="font-size:12px;color:#555;line-height:1.6;">Enter the four driver names and four vehicle names below. They are saved to Turso and stay the same on every device until you change them manually. Driver and vehicle are still assigned separately to each booking on Home.</div>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:900;margin-bottom:8px;">✏️ Saved Driver & Vehicle Names</div>
+      <div id="transport-settings-grid"></div>
+      <button class="btn btn-pink" style="width:100%;margin-top:10px;" onclick="saveTransportSettings()">💾 Save Driver & Vehicle Names</button>
+      <div id="transport-settings-status" style="font-size:11px;color:#777;text-align:center;margin-top:7px;"></div>
     </div>
     <div id="drivers-board"></div>
   </div>
@@ -637,20 +645,20 @@
 <div class="page" id="page-import">
   <div style="margin-top:12px;">
     <div class="card" style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:none;">
-      <div style="font-size:15px;font-weight:800;margin-bottom:6px;">🟢 Bubble Bounce Delivery Data</div>
-      <div style="font-size:13px;color:#555;line-height:1.8;">Upload the Bubble Bounce booking CSV here. This Delivery Dashboard is now set up specifically for Bubble Bounce.</div>
+      <div style="font-size:15px;font-weight:800;margin-bottom:6px;">🟢 Bubble Bounce Inflatables Delivery Data</div>
+      <div style="font-size:13px;color:#555;line-height:1.8;">Upload the Bubble Bounce Inflatables booking CSV here. This dashboard is exclusively for Bubble Bounce Inflatables.</div>
     </div>
     <div class="card" style="border-left:4px solid #2e7d32;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <div style="font-weight:800;font-size:14px;">🟢 Bubble Bounce</div>
+        <div style="font-weight:800;font-size:14px;">🟢 Bubble Bounce Inflatables</div>
         <span id="bbb-status" style="font-size:11px;color:#888;">Not loaded</span>
       </div>
-      <input type="file" id="file-bbb" accept=".csv,text/csv" style="display:none;" onchange="loadCSV(event,'bbb')">
-      <button class="btn btn-green" style="width:100%;padding:12px;font-size:14px;" onclick="document.getElementById('file-bbb').click()">📂 Upload Bubble Bounce CSV</button>
-      <textarea id="paste-bbb" placeholder="Or paste Bubble Bounce CSV data here..." style="width:100%;height:60px;border:1.5px solid #a5d6a7;border-radius:8px;padding:8px;font-size:12px;font-family:monospace;resize:none;outline:none;margin-top:10px;"></textarea>
-      <button class="btn btn-green" style="width:100%;margin-top:8px;" onclick="loadPaste('bbb')">Load from Paste</button>
+      <input type="file" id="file-bbb" accept=".csv,text/csv" style="display:none;" onchange="loadCSV(event)">
+      <button class="btn btn-green" style="width:100%;padding:12px;font-size:14px;" onclick="document.getElementById('file-bbb').click()">📂 Upload Bubble Bounce Inflatables CSV</button>
+      <textarea id="paste-bbb" placeholder="Or paste Bubble Bounce Inflatables CSV data here..." style="width:100%;height:60px;border:1.5px solid #a5d6a7;border-radius:8px;padding:8px;font-size:12px;font-family:monospace;resize:none;outline:none;margin-top:10px;"></textarea>
+      <button class="btn btn-green" style="width:100%;margin-top:8px;" onclick="loadPaste()">Load from Paste</button>
     </div>
-    <button class="btn btn-green" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:4px;" onclick="downloadBubbleBounceCSV()">📥 Download Bubble Bounce CSV</button>
+    <button class="btn btn-green" style="width:100%;padding:14px;font-size:15px;border-radius:12px;margin-top:4px;" onclick="downloadBubbleBounceCSV()">📥 Download Bubble Bounce Inflatables CSV</button>
     <div style="font-size:11px;color:#777;text-align:center;margin:7px 10px 12px;line-height:1.5;">Driver/operations export only. Customer pricing, totals, deposits, balances and fees are not included.</div>
     <button class="btn btn-gray" style="width:100%;margin-top:8px;font-size:12px;" onclick="clearAllImports()">🗑️ Clear Saved Bookings</button>
   </div>
@@ -668,75 +676,40 @@
 // DATA
 const IS_PREVIEW = Boolean(window.DELIVERY_DASH_PREVIEW) || window.location.protocol === 'file:';
 
-const COMPANIES = {
-  jj: {
-    name: 'Jump Junction',
-    phone: '0662670282',
-    wa: '27662670282',
-    website: 'jumpjunction-partyhire.co.za',
-    email: 'bookings@jumpjunction.co.za',
-    tagline: 'Jumping Castle & Party Hire | JHB Northern Suburbs',
-    color: '#e65100',
-    emoji: '🟠',
-    tcUrl: 'https://jumpjunction-partyhire.co.za/terms-and-conditions',
-    tc: 'A deposit is required to secure your booking. Equipment must be used on a flat, clear surface. Adult supervision required at all times. No food, drinks, or shoes on inflatables. Equipment may not be moved once set up. Jump Junction is not liable for injuries due to misuse. Full T&Cs: jumpjunction-partyhire.co.za/terms-and-conditions'
-  },
-  jab: {
-    name: 'Jump & Bubble Events',
-    phone: '0674757931',
-    wa: '27674757931',
-    website: 'jumpandbubbleevents.co.za',
-    email: '',
-    tagline: 'Premium Party Hire | Johannesburg & Pretoria',
-    color: '#880e4f',
-    emoji: '🩷',
-    tcUrl: 'https://jumpandbubbleevents.co.za/#terms',
-    tc: 'A deposit is required to confirm your booking. Setup area must be clean, flat, and clear of obstacles. A power point within 15m is required. Adult supervision required at all times. No shoes, food, drinks, face paint, or sharp objects on equipment. Equipment may not be moved once set up. Cannot be used in heavy wind or rain. Full T&Cs: jumpandbubbleevents.co.za/#terms'
-  },
-  bbb: {
-    name: 'Bubble & Bounce Inflatables',
-    phone: '064 176 7407',
-    wa: '27641767407',
-    website: 'bubblebounce.co.za',
-    email: 'bookatbubbles@gmail.com',
-    tagline: 'Bubble Houses, Jumping Castles & Party Hire | Gauteng',
-    color: '#00a9b7',
-    emoji: '🫧',
-    tcUrl: 'https://bubblebounce.co.za/important-documents',
-    tc: 'Please review Bubble & Bounce Inflatables terms and important documents before your hire. Full information: bubblebounce.co.za/important-documents'
-  }
-};
-
-const JJ_CASTLES = {
-  1:"Olaf's Winter Wonderland",2:"Enchanted Castle",3:"Super Pool",4:"Basic Bouncer",
-  5:"PlayStation",6:"Tropical Gladiator",7:"Little Miss #1",8:"Little Miss #2",
-  9:"Mini Luxe White Castle",10:"Elsa Jumping Castle",11:"Princess Dream",
-  12:"Cool Kids 4 in 1",13:"Crocodile",14:"Jungle Jumper #1",15:"Jungle Jumper #2",
-  16:"10m Double Water Slide",17:"10m Single Water Slide",18:"12m Single Water Slide",
-  19:"Soccer Field",20:"Jungle Slide",21:"Giant Slide",22:"Castle Academy"
-};
-
-const JAB_CASTLES = {
-  1:"Bubble House (3m)",2:"Bubble Bounce (4m)",3:"Bubble Tent",
-  4:"White Jumping Castle",5:"Jumping Castle with Slide",6:"Princess Jumping Castle",
-  7:"Jungle Jumper",8:"Cool Kids 4-in-1 Castle",9:"Water Slide",
-  10:"Soft Play Package (Pink Lavender)",11:"Soft Play Package (Blue)",
-  12:"Soft Play Package (Custom Colour)",13:"Adventure Island",14:"Tropical Gladiator"
+const COMPANY = {
+  name: 'Bubble Bounce Inflatables',
+  phone: '064 176 7407',
+  wa: '27641767407',
+  website: 'bubblebounce.co.za',
+  tagline: 'Bubble Houses, Jumping Castles & Party Hire | Gauteng',
+  color: '#00a9b7',
+  emoji: '🫧',
+  tcUrl: 'https://bubblebounce.co.za/important-documents',
+  tc: 'Please review Bubble Bounce Inflatables terms and important documents before your hire. Full information: bubblebounce.co.za/important-documents'
 };
 
 const BBB_CASTLES = {
-  1:"Basic Bouncer",2:"Jumping Castle with Slide",3:"Bubble House 3m",
-  4:"Bubble Bounce",5:"Water Slide",6:"Soft Play",7:"Cool Kids",8:"Princess Castle",
-  9:"Giant Slide",10:"Soccer Field"
+  1:'Basic Bouncer',2:'Jumping Castle with Slide',3:'Bubble House 3m',
+  4:'Bubble Bounce',5:'Water Slide',6:'Soft Play',7:'Cool Kids',8:'Princess Castle',
+  9:'Giant Slide',10:'Soccer Field'
 };
 
+const DEFAULT_TRANSPORT_SLOTS = [
+  {slot:1, driver_name:'', vehicle_name:'Bantam'},
+  {slot:2, driver_name:'', vehicle_name:'Vehicle 2'},
+  {slot:3, driver_name:'', vehicle_name:'Vehicle 3'},
+  {slot:4, driver_name:'', vehicle_name:'Vehicle 4'}
+];
+
 let allBookings = [];
-
-let importedJJ = null, importedJAB = null, importedBBB = null;
-
-let currentFilter = "all";
-
+let importedBBB = null;
+let transportSlots = DEFAULT_TRANSPORT_SLOTS.map(x => ({...x}));
+let currentFilter = 'all';
 let calYear, calMonth, calSelectedDay;
+
+function escHtml(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 
 function lsGet(key, def = []) {
   try {
@@ -745,21 +718,66 @@ function lsGet(key, def = []) {
   } catch { return def; }
 }
 
-function getCastleName(source, castleId, booking) {
-  if (booking && booking._fromCSV && booking.castleNameRaw) return booking.castleNameRaw;
-  if (!castleId) return 'No product';
-  const id = +castleId;
-  if (source === 'jj') return JJ_CASTLES[id] || `Castle #${id}`;
-  if (source === 'jab') return JAB_CASTLES[id] || `Product #${id}`;
-  if (source === 'bbb') return BBB_CASTLES[id] || `Product #${id}`;
-  return `Product #${id}`;
+function normalizeTransportSlots(slots) {
+  const map = new Map((Array.isArray(slots) ? slots : []).map(s => [Number(s.slot), s]));
+  return DEFAULT_TRANSPORT_SLOTS.map(def => {
+    const found = map.get(def.slot) || {};
+    return {
+      slot: def.slot,
+      driver_name: String(found.driver_name ?? def.driver_name ?? '').trim(),
+      vehicle_name: String(found.vehicle_name ?? def.vehicle_name ?? '').trim()
+    };
+  });
+}
+function driverKey(slot){ return `driver-${slot}`; }
+function vehicleKey(slot){ return `vehicle-${slot}`; }
+function driverSlot(slot){ return transportSlots.find(x=>Number(x.slot)===Number(slot)) || DEFAULT_TRANSPORT_SLOTS[slot-1]; }
+function driverDisplay(slot){ const s=driverSlot(slot); return s && s.driver_name ? s.driver_name : `Driver ${slot}`; }
+function vehicleDisplay(slot){ const s=driverSlot(slot); return s && s.vehicle_name ? s.vehicle_name : `Vehicle ${slot}`; }
+function normalizeDriverAssignment(value){
+  const v=String(value||'').trim(); if(!v)return '';
+  let m=v.match(/^driver-([1-4])$/i); if(m)return driverKey(+m[1]);
+  m=v.match(/^driver\s*([1-4])$/i); if(m)return driverKey(+m[1]);
+  const hit=transportSlots.find(x=>x.driver_name && x.driver_name.toLowerCase()===v.toLowerCase());
+  return hit ? driverKey(hit.slot) : v;
+}
+function normalizeVehicleAssignment(value){
+  const v=String(value||'').trim(); if(!v)return '';
+  let m=v.match(/^vehicle-([1-4])$/i); if(m)return vehicleKey(+m[1]);
+  if(/^bantam$/i.test(v)) return vehicleKey(1);
+  m=v.match(/^vehicle\s*([1-4])$/i); if(m)return vehicleKey(+m[1]);
+  const hit=transportSlots.find(x=>x.vehicle_name && x.vehicle_name.toLowerCase()===v.toLowerCase());
+  return hit ? vehicleKey(hit.slot) : v;
+}
+function driverAssignmentLabel(value){
+  const v=normalizeDriverAssignment(value);
+  const m=v.match(/^driver-([1-4])$/);
+  if(!m) return v || 'Unassigned';
+  const slot=+m[1], custom=String(driverSlot(slot)?.driver_name||'').trim();
+  return custom ? `Driver ${slot} — ${custom}` : `Driver ${slot}`;
+}
+function vehicleAssignmentLabel(value){
+  const v=normalizeVehicleAssignment(value);
+  const m=v.match(/^vehicle-([1-4])$/);
+  return m ? vehicleDisplay(+m[1]) : (v || 'Unassigned vehicle');
+}
+function driverAssignmentOptions(selected){
+  const cur=normalizeDriverAssignment(selected);
+  return ['<option value="">Unassigned</option>'].concat([1,2,3,4].map(n=>{const custom=String(driverSlot(n)?.driver_name||'').trim(); const label=custom?`Driver ${n} — ${custom}`:`Driver ${n}`; return `<option value="${driverKey(n)}" ${cur===driverKey(n)?'selected':''}>${escHtml(label)}</option>`;})).join('');
+}
+function vehicleAssignmentOptions(selected){
+  const cur=normalizeVehicleAssignment(selected);
+  return ['<option value="">Unassigned vehicle</option>'].concat([1,2,3,4].map(n=>`<option value="${vehicleKey(n)}" ${cur===vehicleKey(n)?'selected':''}>${escHtml(vehicleDisplay(n))}</option>`)).join('');
 }
 
-function sourceLabel(src) {
-  if (src === 'jj') return 'Jump Junction';
-  if (src === 'jab') return 'Jump & Bubble';
-  if (src === 'bbb') return 'Bubble Bounce';
-  return src;
+function getCastleName(source, castleId, booking) {
+  if (booking && booking.castleNameRaw) return booking.castleNameRaw;
+  if (!castleId) return 'No product';
+  return BBB_CASTLES[+castleId] || `Product #${castleId}`;
+}
+
+function sourceLabel() {
+  return 'Bubble Bounce Inflatables';
 }
 
 function fmtDate(d) {
@@ -803,44 +821,9 @@ function updateStats() {
   document.getElementById('stat-awaiting-delivery').textContent = active.filter(b => logisticsStage(b) === 'awaiting-delivery').length;
   document.getElementById('stat-awaiting-collection').textContent = active.filter(b => logisticsStage(b) === 'awaiting-collection').length;
 
-  document.getElementById('src-bbb').textContent = active.filter(b => b._source === 'bbb').length;
+  document.getElementById('src-bbb').textContent = active.length;
   document.getElementById('unassigned-driver-count').textContent = active.filter(b => !String(b._assignedDriver || '').trim()).length;
   document.getElementById('unassigned-vehicle-count').textContent = active.filter(b => !String(b._assignedVehicle || '').trim()).length;
-}
-
-function loadAll() {
-  allBookings = [];
-
-  // Jump Junction: key = jj_bk (but different file from BBB - both use jj_bk)
-  // Since BBB uses same keys, we load once and tag them
-  // JJ app bookings
-  const jjRaw = lsGet('jj_bk', []);
-  jjRaw.forEach(b => {
-    allBookings.push({ ...b, _source: 'jj', _id: `jj_${b.id}` });
-  });
-
-  // Jump & Bubble Events: key = jab_bk
-  const jabRaw = lsGet('jab_bk', []);
-  jabRaw.forEach(b => {
-    allBookings.push({ ...b, _source: 'jab', _id: `jab_${b.id}` });
-  });
-
-  // Bubble Bounce Bliss uses same key jj_bk as Jump Junction
-  // They share storage — so jj_bk contains both JJ and BBB bookings
-  // The difference: BBB has no motor tracking, JJ does
-  // We can't separate them from localStorage alone unless they were saved to different keys
-  // We'll note this to user and show them as one pool
-
-  updateStats();
-  renderDashboard();
-  renderWeekend();
-  renderCalendar();
-  renderAll();
-  renderDrivers();
-
-  const total = allBookings.length;
-  document.getElementById('header-sub').textContent =
-    `${total} booking${total !== 1 ? 's' : ''} loaded · Tap 🔄 to refresh`;
 }
 
 function renderDashboard() {
@@ -1099,9 +1082,6 @@ function renderAll(search = '') {
     if (currentFilter === 'awaiting-delivery') return logisticsStage(b) === 'awaiting-delivery';
     if (currentFilter === 'awaiting-collection') return logisticsStage(b) === 'awaiting-collection';
     if (currentFilter === 'collected') return logisticsStage(b) === 'collected';
-    if (currentFilter === 'jj') return b._source === 'jj';
-    if (currentFilter === 'jab') return b._source === 'jab';
-    if (currentFilter === 'bbb') return b._source === 'bbb';
     return b.status !== 'cancelled';
   });
 
@@ -1157,12 +1137,12 @@ function bookingCard(b, showDate = true) {
       <div class="book-meta">📞 ${b.phone || 'No phone'}</div>
       <div class="book-meta" style="font-weight:800;color:#1b5e20;" onclick="event.stopPropagation()">🚚 Driver:
         <select onchange="updateAssignedDriver('${b._id}',this.value)" onclick="event.stopPropagation()" style="margin-left:5px;padding:6px 8px;border:1.5px solid #80cbc4;border-radius:8px;background:white;font-weight:800;">
-          ${['','Driver 1','Driver 2','Driver 3','Driver 4'].map(d=>`<option value="${d}" ${String(b._assignedDriver||'')===d?'selected':''}>${d||'Unassigned'}</option>`).join('')}
+          ${driverAssignmentOptions(b._assignedDriver)}
         </select>
       </div>
       <div class="book-meta" style="font-weight:800;color:#6a1b9a;" onclick="event.stopPropagation()">🚙 Vehicle:
         <select onchange="updateAssignedVehicle('${b._id}',this.value)" onclick="event.stopPropagation()" style="margin-left:5px;padding:6px 8px;border:1.5px solid #ce93d8;border-radius:8px;background:white;font-weight:800;">
-          ${['','Bantam','Vehicle 2','Vehicle 3','Vehicle 4'].map(v=>`<option value="${v}" ${String(b._assignedVehicle||'')===v?'selected':''}>${v||'Unassigned vehicle'}</option>`).join('')}
+          ${vehicleAssignmentOptions(b._assignedVehicle)}
         </select>
       </div>
 
@@ -1197,7 +1177,8 @@ function openModal(uid) {
       ${b._delivTime ? `<div class="detail-row"><span class="detail-label">⏰ Delivery Time</span><span class="detail-value">${b._delivTime}</span></div>` : ''}
       ${b._collectTime ? `<div class="detail-row"><span class="detail-label">⏰ Collection Time</span><span class="detail-value">${b._collectTime}</span></div>` : ''}
       ${b.notes ? `<div class="detail-row"><span class="detail-label">📦 Packing Notes</span><span class="detail-value">${b.notes}</span></div>` : ''}
-      <div class="detail-row"><span class="detail-label">🚚 Assigned Driver</span><span class="detail-value"><input type="text" value="${escHtml(b._assignedDriver || '')}" placeholder="Enter driver name" onchange="updateAssignedDriver('${b._id}',this.value)" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;"></span></div>
+      <div class="detail-row"><span class="detail-label">🚚 Assigned Driver</span><span class="detail-value"><select onchange="updateAssignedDriver('${b._id}',this.value)" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">${driverAssignmentOptions(b._assignedDriver)}</select></span></div>
+      <div class="detail-row"><span class="detail-label">🚙 Assigned Vehicle</span><span class="detail-value"><select onchange="updateAssignedVehicle('${b._id}',this.value)" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:8px;">${vehicleAssignmentOptions(b._assignedVehicle)}</select></span></div>
     </div>
 
     <div class="book-actions" style="margin-top:14px;">
@@ -1287,27 +1268,8 @@ function markDone(uid) {
   if (!b) return;
   b.status = 'done';
   updateBookingField(uid, 'status', 'done');
-
-  // Only try localStorage save if not a CSV import
-  if (!b._fromCSV) {
-    if (b._source === 'jj' || b._source === 'bbb') {
-      const raw = lsGet('jj_bk', []);
-      const idx = raw.findIndex(x => +x.id === +b.id);
-      if (idx >= 0) { raw[idx].status = 'done'; localStorage.setItem('jj_bk', JSON.stringify(raw)); }
-    } else if (b._source === 'jab') {
-      const raw = lsGet('jab_bk', []);
-      const idx = raw.findIndex(x => +x.id === +b.id);
-      if (idx >= 0) { raw[idx].status = 'done'; localStorage.setItem('jab_bk', JSON.stringify(raw)); }
-    }
-  }
-  // Note: for CSV imports, done status is tracked in memory only for this session
-
   closeModalBtn();
-  updateStats();
-  renderDashboard();
-  renderWeekend();
-  renderCalendar();
-  renderAll();
+  updateStats(); renderDashboard(); renderWeekend(); renderCalendar(); renderAll();
 }
 
 function updateHubNotes(uid, val) {
@@ -1325,20 +1287,16 @@ function updateBookingField(uid, field, val) {
   const b = allBookings.find(x => x._id === uid);
   if (!b) return;
   b[field] = val;
-  ['jj','jab','bbb'].forEach(src => {
-    const imported = src === 'jj' ? importedJJ : src === 'jab' ? importedJAB : importedBBB;
-    if (!imported) return;
-    const idx = imported.findIndex(x => (`${src}_${x.id}`) === uid || x._id === uid);
-    if (idx >= 0) { imported[idx][field] = val; }
-    try { localStorage.setItem(`hub_${src}`, JSON.stringify(imported)); } catch(e) {}
-  });
-
-  // Version 31: keep logistics changes in Turso as well as this browser.
+  if (importedBBB) {
+    const idx = importedBBB.findIndex(x => (`bbb_${x.id}`) === uid || x._id === uid);
+    if (idx >= 0) importedBBB[idx][field] = val;
+    try { localStorage.setItem('hub_bbb', JSON.stringify(importedBBB)); } catch(e) {}
+  }
   if (currentStaffPin && ['_delivTime','_collectTime','_delivered','_collected','_hubNotes','_assignedDriver','_assignedVehicle','status'].includes(field)) {
     apiCall('update-booking', {
       method: 'POST',
-      body: { source: b._source, externalId: b.id, field, value: val }
-    }).catch(err => console.warn('Turso booking update failed:', err));
+      body: { externalId: b.id, field, value: val }
+    }).catch(err => console.warn('Bubble Bounce Turso booking update failed:', err));
   }
 }
 
@@ -1414,7 +1372,7 @@ function downloadDay(ds) {
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>
-  <div style="margin-top:20px;font-size:11px;color:#999;">Generated ${new Date().toLocaleString('en-ZA')} · Bubble & Bounce Delivery Hub</div>
+  <div style="margin-top:20px;font-size:11px;color:#999;">Generated ${new Date().toLocaleString('en-ZA')} · Bubble Bounce Inflatables Delivery Hub</div>
   </body></html>`;
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8;' });
@@ -1432,7 +1390,7 @@ function callClient(phone) {
 
 function waClient(phone, name) {
   const clean = phone.replace(/\s/g,'').replace(/^0/, '+27');
-  const msg = encodeURIComponent(`Hi ${name}, just confirming your booking delivery today 😊`);
+  const msg = encodeURIComponent(`Hi ${name}, Bubble Bounce Inflatables here 🫧 Just confirming your booking delivery today 😊`);
   window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
 }
 
@@ -1451,7 +1409,7 @@ function sendDirectWA(uid, type) {
   overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:999;display:flex;align-items:flex-end;";
 
   var isDelivery = type === "delivery";
-  var co = COMPANIES.bbb;
+  var co = COMPANY;
   var fname = (b.name || "there").split(" ")[0];
 
   var setups = [
@@ -1486,7 +1444,7 @@ function __pickSetup(uid, type, setup) {
   var b = allBookings.find(function(x) { return x._id === uid; });
   if (!b || !b.phone) return;
 
-  var co = COMPANIES.bbb;
+  var co = COMPANY;
   var fname = (b.name || "there").split(" ")[0];
   var dt = b._delivTime ? " at " + b._delivTime : "";
   var ct = b._collectTime ? " at " + b._collectTime : "";
@@ -1524,9 +1482,11 @@ function __pickSetup(uid, type, setup) {
         "A standard power point must be within 15m of the setup area",
         "Keep all sharp objects, jewellery and pets well away from the bubble at all times",
         "The blower must remain on for the entire duration of the hire",
-        "Maximum of 6 people inside the bubble at any time",
+        "Maximum of 5 children inside the bubble at a time — 5 in / 5 out",
         "No food, drinks, face paint, glitter or confetti inside the bubble",
+        "Children who do not follow the Bubble Bounce safety rules may be stopped from entering",
         "No shoes inside the bubble — socks only",
+        "If a Bubble Bounce operator is included, the operator controls entry from inside the tunnel",
         "Do not push, pull or lean against the bubble walls",
         "Adult supervision required at all times",
         "The bubble may not be moved once set up",
@@ -1793,7 +1753,7 @@ function csvRowToBooking(row, idx) {
 
 // Bubble Bounce-only import
 
-function loadCSV(event, source) {
+function loadCSV(event) {
   const file = event.target.files[0];
   if (!file) { alert('No file selected.'); return; }
   const reader = new FileReader();
@@ -1803,12 +1763,12 @@ function loadCSV(event, source) {
       const text = e.target.result;
       if (!text || !text.trim()) { alert('⚠️ The file appears to be empty.'); return; }
       const rows = parseCSV(text);
-      if (!rows.length) { alert('⚠️ Could not read any rows from the CSV. Make sure it was exported directly from your booking app (not edited in Excel first).'); return; }
+      if (!rows.length) { alert('⚠️ Could not read any rows from the CSV. Make sure it was exported directly from Bubble Bounce Inflatables.'); return; }
       const bookings = rows.map((r, i) => csvRowToBooking(r, i)).filter(b => b.name || b.date);
-      if (!bookings.length) { alert('⚠️ File loaded but no valid bookings found. Check the file has Name and Date columns.'); return; }
-      applyImport(source, bookings, file.name);
+      if (!bookings.length) { alert('⚠️ File loaded but no valid Bubble Bounce Inflatables bookings were found. Check that the file has Customer and Delivery Date columns.'); return; }
+      applyImport(bookings, file.name);
     } catch(err) {
-      alert('⚠️ Error reading file: ' + err.message);
+      alert('⚠️ Error reading Bubble Bounce Inflatables CSV: ' + err.message);
     }
   };
   reader.readAsText(file, 'UTF-8');
@@ -1820,18 +1780,16 @@ function bookingMatchKey(b) {
 
 function mergeHubFields(newBookings, oldBookings) {
   if (!oldBookings || !oldBookings.length) return newBookings;
-  const oldMap = {};
-  oldBookings.forEach(b => { oldMap[bookingMatchKey(b)] = b; });
+  const byId = new Map(oldBookings.map(b => [String(b.id ?? ''), b]));
+  const byKey = new Map(oldBookings.map(b => [bookingMatchKey(b), b]));
   return newBookings.map(b => {
-    const old = oldMap[bookingMatchKey(b)];
+    const old = byId.get(String(b.id ?? '')) || byKey.get(bookingMatchKey(b));
     if (!old) return b;
     return {
       ...b,
       _hubNotes: old._hubNotes || '',
       _assignedDriver: old._assignedDriver || b._assignedDriver || '',
       _assignedVehicle: old._assignedVehicle || b._assignedVehicle || '',
-      // Prefer a time freshly pulled from this import (e.g. Party Hub now sends
-      // it); otherwise keep a time that was set manually in the hub before.
       _delivTime: b._delivTime || old._delivTime || '',
       _collectTime: b._collectTime || old._collectTime || '',
       _delivered: !!old._delivered,
@@ -1840,75 +1798,71 @@ function mergeHubFields(newBookings, oldBookings) {
   });
 }
 
-function applyImport(source, bookings, label, silent) {
-  // Ensure each booking has a unique id
+function applyImport(bookings, label, silent) {
   bookings = bookings.map((b, i) => ({ ...b, id: b.id !== undefined ? b.id : i }));
-  const existing = source === 'jj' ? importedJJ : source === 'jab' ? importedJAB : importedBBB;
+  const existing = importedBBB || [];
   bookings = mergeHubFields(bookings, existing);
+  const manualBookings = existing.filter(b => String(b.id || '').startsWith('manual-'));
+  const incomingIds = new Set(bookings.map(b => String(b.id || '')));
+  bookings = bookings.concat(manualBookings.filter(b => !incomingIds.has(String(b.id || ''))));
+  importedBBB = bookings;
   const count = bookings.length;
-  const statusEl = document.getElementById(`${source}-status`);
-  if (source === 'jj') { importedJJ = bookings; }
-  if (source === 'jab') { importedJAB = bookings; }
-  if (source === 'bbb') { importedBBB = bookings; }
+  const statusEl = document.getElementById('bbb-status');
 
-  // Keep a browser copy for offline/reload convenience.
   try {
-    localStorage.setItem(`hub_${source}`, JSON.stringify(bookings));
-    localStorage.setItem(`hub_${source}_label`, label);
-    localStorage.setItem(`hub_${source}_time`, new Date().toISOString());
-  } catch(e) { console.warn('localStorage save failed:', e); }
+    localStorage.setItem('hub_bbb', JSON.stringify(bookings));
+    localStorage.setItem('hub_bbb_label', label || 'Bubble Bounce Inflatables');
+    localStorage.setItem('hub_bbb_time', new Date().toISOString());
+  } catch(e) { console.warn('Bubble Bounce local cache save failed:', e); }
 
-  statusEl.textContent = `⏳ Saving ${count} bookings to Turso…`;
+  statusEl.textContent = `⏳ Saving ${count} Bubble Bounce Inflatables bookings to Turso…`;
   statusEl.style.color = '#555';
 
-  // Version 31: imports are now persisted to Turso, not only localStorage.
   if (currentStaffPin) {
-    apiCall('save-bookings', { method: 'POST', body: { source, bookings } })
-      .then(data => {
-        statusEl.textContent = `✅ ${data.saved ?? count} bookings saved to Turso`;
-        statusEl.style.color = source === 'jj' ? '#e65100' : source === 'jab' ? '#880e4f' : '#1b5e20';
+    apiCall('save-bookings', { method: 'POST', body: { bookings } })
+      .then(async data => {
+        statusEl.textContent = `✅ ${data.saved ?? count} Bubble Bounce Inflatables bookings saved to Turso`;
+        statusEl.style.color = '#1b5e20';
+        await loadFromTurso(true);
       })
       .catch(err => {
         statusEl.textContent = `⚠️ Browser saved · Turso error: ${err.message}`;
         statusEl.style.color = '#b71c1c';
       });
   } else {
-    statusEl.textContent = `✅ ${count} bookings saved in this browser`;
-    statusEl.style.color = source === 'jj' ? '#e65100' : source === 'jab' ? '#880e4f' : '#1b5e20';
+    statusEl.textContent = `✅ ${count} Bubble Bounce Inflatables bookings saved in this browser`;
+    statusEl.style.color = '#1b5e20';
   }
 
-  if (!silent) alert(`✅ ${count} bookings loaded from ${label}. They are now being saved to Turso. Tap 🔄 Sync DB to refresh the shared bookings.`);
+  syncAll(true);
+  if (!silent) alert(`✅ ${count} Bubble Bounce Inflatables bookings loaded. Operational progress already saved in Turso (delivered, collected, hub notes, driver and vehicle) is protected when the same CSV is imported again.`);
 }
 
-function loadPaste(source) {
-  const ta = document.getElementById(`paste-${source}`);
+function loadPaste() {
+  const ta = document.getElementById('paste-bbb');
   const raw = ta.value.trim();
-  if (!raw) { alert('Nothing pasted yet — copy from the app first.'); return; }
-
-  // Try JSON first (from clipboard copy button), then CSV
+  if (!raw) { alert('Nothing pasted yet — copy the Bubble Bounce Inflatables CSV data first.'); return; }
   let bookings;
   if (raw.startsWith('{')) {
     let parsed;
-    try { parsed = JSON.parse(raw); } catch(e) { alert('⚠️ Could not read the data.'); return; }
-    if (!parsed.bookings || !Array.isArray(parsed.bookings)) { alert('⚠️ Invalid export format.'); return; }
+    try { parsed = JSON.parse(raw); } catch(e) { alert('⚠️ Could not read the pasted Bubble Bounce Inflatables data.'); return; }
+    if (!parsed.bookings || !Array.isArray(parsed.bookings)) { alert('⚠️ Invalid Bubble Bounce Inflatables export format.'); return; }
     bookings = parsed.bookings;
   } else {
-    // Treat as CSV text
     const rows = parseCSV(raw);
-    if (!rows.length) { alert('⚠️ Could not read as CSV either. Try using the file upload instead.'); return; }
+    if (!rows.length) { alert('⚠️ Could not read the pasted data as CSV. Try the file upload instead.'); return; }
     bookings = rows.map((r, i) => csvRowToBooking(r, i));
   }
-
-  applyImport(source, bookings, source === 'jj' ? 'Jump Junction' : source === 'jab' ? 'Jump & Bubble' : 'Bubble Bounce Bliss');
+  applyImport(bookings, 'Pasted Bubble Bounce Inflatables data');
 }
 
 function updateAssignedDriver(uid, val) {
-  updateBookingField(uid, '_assignedDriver', String(val || '').trim());
+  updateBookingField(uid, '_assignedDriver', normalizeDriverAssignment(val));
   renderDashboard(); renderWeekend(); renderCalendar(); renderAll(); renderDrivers();
 }
 
 function updateAssignedVehicle(uid, val) {
-  updateBookingField(uid, '_assignedVehicle', String(val || '').trim());
+  updateBookingField(uid, '_assignedVehicle', normalizeVehicleAssignment(val));
   renderDashboard(); renderWeekend(); renderCalendar(); renderAll(); renderDrivers(); renderPacking();
 }
 
@@ -1918,112 +1872,187 @@ function csvEscape(v) {
 }
 
 function downloadBubbleBounceCSV() {
-  const rows = allBookings.filter(b => b._source === 'bbb' && b.status !== 'cancelled');
-  if (!rows.length) { alert('No Bubble Bounce bookings are available to download.'); return; }
-  // Operations-only export: intentionally NO price, total, deposit, balance or fee fields.
+  const rows = allBookings.filter(b => b.status !== 'cancelled');
+  if (!rows.length) { alert('No Bubble Bounce Inflatables bookings are available to download.'); return; }
   const headers = ['Date','Collection Date','Customer','Phone','Address','Products','Extras','Delivery Time','Collection Time','Assigned Driver','Assigned Vehicle','Status','Packing Notes','Setup Notes','Balloon Colours'];
   const data = rows.map(b => [
     b.date || '', b.edate || '', b.name || '', b.phone || '', b.addr || '',
-    getCastleName(b._source, b.castleId, b) || '',
+    getCastleName('bbb', b.castleId, b) || '',
     Array.isArray(b.extras) ? b.extras.join(' | ') : (b.extras || ''),
-    b._delivTime || '', b._collectTime || '', b._assignedDriver || '', b._assignedVehicle || '', b.status || '',
+    b._delivTime || '', b._collectTime || '', driverAssignmentLabel(b._assignedDriver), vehicleAssignmentLabel(b._assignedVehicle), b.status || '',
     b.notes || '', b.setup || '', b.balloonColors || ''
   ]);
   const csv = [headers, ...data].map(r => r.map(csvEscape).join(',')).join('\r\n');
   const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `Bubble_Bounce_Deliveries_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href = url; a.download = `Bubble_Bounce_Inflatables_Deliveries_${new Date().toISOString().slice(0,10)}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 
 function syncAll(silent = false) {
   allBookings = [];
-
   if (importedBBB) importedBBB.forEach(b => allBookings.push({ ...b, _source: 'bbb', _id: `bbb_${b.id}` }));
-
-  updateStats();
-  renderDashboard();
-  renderWeekend();
-  renderCalendar();
-  renderAll();
-  renderDrivers();
-
+  updateStats(); renderDashboard(); renderWeekend(); renderCalendar(); renderAll(); renderDrivers(); renderPacking();
   const total = allBookings.length;
   document.getElementById('header-sub').textContent = total
-    ? `${total} booking${total !== 1 ? 's' : ''} loaded · Tap 🔄 to refresh`
-    : '0 bookings in Turso · Tap 🔄 to refresh';
-
-  if (!total && !silent) {
-    alert('No bookings are currently stored in Turso. Import fresh CSVs to add bookings.');
-    return;
-  }
-
-  if (!silent) {
-    showTab('dashboard');
-    window.scrollTo(0, 0);
-  }
+    ? `${total} Bubble Bounce Inflatables booking${total !== 1 ? 's' : ''} loaded · Tap 🔄 to refresh`
+    : '0 Bubble Bounce Inflatables bookings in Turso · Tap 🔄 to refresh';
+  if (!total && !silent) alert('No Bubble Bounce Inflatables bookings are currently stored in Turso. Import a CSV or add a last-minute booking.');
+  if (!silent && total) { showTab('dashboard'); window.scrollTo(0, 0); }
 }
 
 function clearLocalBookingCache() {
-  ['jj','jab','bbb'].forEach(src => {
-    localStorage.removeItem(`hub_${src}`);
-    localStorage.removeItem(`hub_${src}_label`);
-    localStorage.removeItem(`hub_${src}_time`);
-    const el = document.getElementById(`${src}-status`);
-    if (el) { el.textContent = 'Not loaded'; el.style.color = '#888'; }
-  });
-  importedJJ = []; importedJAB = []; importedBBB = [];
+  localStorage.removeItem('hub_bbb');
+  localStorage.removeItem('hub_bbb_label');
+  localStorage.removeItem('hub_bbb_time');
+  const el = document.getElementById('bbb-status');
+  if (el) { el.textContent = 'Not loaded'; el.style.color = '#888'; }
+  importedBBB = [];
   allBookings = [];
-  updateStats(); renderDashboard(); renderWeekend(); renderCalendar(); renderAll();
+  updateStats(); renderDashboard(); renderWeekend(); renderCalendar(); renderAll(); renderDrivers(); renderPacking();
 }
 
 async function clearAllImports() {
-  if (!currentStaffPin) {
-    alert('Please sign in before clearing bookings.');
-    return;
-  }
-  if (!confirm('⚠️ CLEAR ALL BOOKINGS?\n\nThis will permanently delete every booking from the shared Turso database on ALL devices. Stock will not be deleted.\n\nAnyone signed in with the general Bubble Bounce PIN can do this.')) return;
-  if (!confirm('Final confirmation: permanently delete ALL Delivery Dash bookings from Turso?')) return;
-
+  if (!currentStaffPin) { alert('Please sign in before clearing Bubble Bounce Inflatables bookings.'); return; }
+  if (!confirm('⚠️ CLEAR ALL BUBBLE BOUNCE INFLATABLES BOOKINGS?\n\nThis will permanently delete every Bubble Bounce Inflatables booking from the shared Turso database on ALL devices. Driver and vehicle names will stay saved.')) return;
+  if (!confirm('Final confirmation: permanently delete ALL Bubble Bounce Inflatables bookings from Turso?')) return;
   const sub = document.getElementById('header-sub');
-  if (sub) sub.textContent = 'Deleting bookings from Turso…';
+  if (sub) sub.textContent = 'Deleting Bubble Bounce Inflatables bookings from Turso…';
   try {
     const data = await apiCall('clear-bookings', { method: 'POST', body: {} });
     clearLocalBookingCache();
-    if (sub) sub.textContent = '0 bookings in Turso · shared database cleared';
-    alert(`✅ Cleared ${data.deleted || 0} booking${Number(data.deleted) === 1 ? '' : 's'} from Turso. All devices will show empty after login or Sync DB.`);
+    if (sub) sub.textContent = '0 Bubble Bounce Inflatables bookings in Turso · shared database cleared';
+    alert(`✅ Cleared ${data.deleted || 0} Bubble Bounce Inflatables booking${Number(data.deleted) === 1 ? '' : 's'} from Turso.`);
   } catch (e) {
     if (sub) sub.textContent = `Clear failed: ${e.message}`;
-    alert(`⚠️ Could not clear Turso: ${e.message}`);
+    alert(`⚠️ Could not clear Bubble Bounce Inflatables bookings from Turso: ${e.message}`);
   }
 }
 
 function loadPersistedImports() {
-  let found = false;
-  ['jj','jab','bbb'].forEach(source => {
-    try {
-      const saved = localStorage.getItem(`hub_${source}`);
-      const label = localStorage.getItem(`hub_${source}_label`) || source;
-      const time = localStorage.getItem(`hub_${source}_time`);
-      if (saved) {
-        const bookings = JSON.parse(saved);
-        if (source === 'jj') importedJJ = bookings;
-        if (source === 'jab') importedJAB = bookings;
-        if (source === 'bbb') importedBBB = bookings;
-        const statusEl = document.getElementById(`${source}-status`);
-        if (statusEl) {
-          const d = time ? new Date(time).toLocaleDateString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-          statusEl.textContent = `✅ ${bookings.length} bookings · ${d}`;
-          statusEl.style.color = source === 'jj' ? '#e65100' : source === 'jab' ? '#880e4f' : '#1b5e20';
-        }
-        found = true;
-      }
-    } catch(e) { console.warn('Failed to load persisted data for', source, e); }
-  });
-  return found;
+  try {
+    const saved = localStorage.getItem('hub_bbb');
+    const time = localStorage.getItem('hub_bbb_time');
+    if (!saved) return false;
+    importedBBB = JSON.parse(saved);
+    const statusEl = document.getElementById('bbb-status');
+    if (statusEl) {
+      const d = time ? new Date(time).toLocaleDateString('en-ZA',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+      statusEl.textContent = `✅ ${importedBBB.length} Bubble Bounce Inflatables bookings${d ? ' · '+d : ''}`;
+      statusEl.style.color = '#1b5e20';
+    }
+    return true;
+  } catch(e) {
+    console.warn('Failed to load Bubble Bounce Inflatables cached bookings', e);
+    return false;
+  }
 }
 
+function loadPersistedTransportSettings(){
+  try {
+    const saved=localStorage.getItem('bb_transport_slots');
+    if(saved) transportSlots=normalizeTransportSlots(JSON.parse(saved));
+  } catch(e) {}
+}
+
+function renderTransportSettings(){
+  const grid=document.getElementById('transport-settings-grid'); if(!grid)return;
+  grid.innerHTML=transportSlots.map(s=>`<div style="display:grid;grid-template-columns:58px 1fr 1fr;gap:7px;align-items:center;margin-bottom:8px;">
+    <div style="font-size:12px;font-weight:900;color:var(--purple);">Slot ${s.slot}</div>
+    <input id="driver-name-${s.slot}" type="text" value="${escHtml(s.driver_name||'')}" placeholder="Driver ${s.slot} name" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;">
+    <input id="vehicle-name-${s.slot}" type="text" value="${escHtml(s.vehicle_name||'')}" placeholder="Vehicle ${s.slot} name" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;">
+  </div>`).join('');
+}
+
+async function saveTransportSettings(){
+  const status=document.getElementById('transport-settings-status');
+  const slots=[1,2,3,4].map(slot=>({
+    slot,
+    driver_name:String(document.getElementById(`driver-name-${slot}`)?.value||'').trim(),
+    vehicle_name:String(document.getElementById(`vehicle-name-${slot}`)?.value||'').trim()
+  }));
+  transportSlots=normalizeTransportSlots(slots);
+  try { localStorage.setItem('bb_transport_slots', JSON.stringify(transportSlots)); } catch(e) {}
+  if(status) status.textContent='Saving to Turso…';
+  try {
+    const data=await apiCall('save-transport-settings',{method:'POST',body:{slots:transportSlots}});
+    transportSlots=normalizeTransportSlots(data.slots||transportSlots);
+    try { localStorage.setItem('bb_transport_slots', JSON.stringify(transportSlots)); } catch(e) {}
+    if(status) status.textContent='✅ Driver and vehicle names saved to Turso.';
+    renderDrivers(); renderDashboard(); renderAll(); renderPacking();
+  } catch(e) {
+    if(status) status.textContent=`⚠️ Could not save to Turso: ${e.message}`;
+  }
+}
+
+function openManualBookingModal(){
+  const today=fmtDate(new Date());
+  document.getElementById('modal-body').innerHTML=`
+    <div class="modal-title">➕ Add Last-Minute Bubble Bounce Inflatables Booking</div>
+    <div style="font-size:12px;color:#666;margin-bottom:12px;">Use this for last-minute bookings that are not yet in the CSV. Saving adds the booking directly to the shared Turso database.</div>
+    <div style="display:grid;gap:9px;">
+      <input id="manual-name" type="text" placeholder="Customer name *" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <input id="manual-phone" type="tel" placeholder="Cellphone number" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <input id="manual-address" type="text" placeholder="Delivery address" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><label style="font-size:11px;font-weight:800;">Delivery date<input id="manual-date" type="date" value="${today}" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px;margin-top:4px;"></label><label style="font-size:11px;font-weight:800;">Delivery time<input id="manual-delivery-time" type="time" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px;margin-top:4px;"></label></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><label style="font-size:11px;font-weight:800;">Collection date<input id="manual-collection-date" type="date" value="${today}" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px;margin-top:4px;"></label><label style="font-size:11px;font-weight:800;">Collection time<input id="manual-collection-time" type="time" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px;margin-top:4px;"></label></div>
+      <input id="manual-product" type="text" placeholder="Item(s) / equipment *" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <input id="manual-extras" type="text" placeholder="Extras — separate with commas" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <input id="manual-balloons" type="text" placeholder="Balloon colours / requirements" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <input id="manual-setup" type="text" placeholder="Setup surface / setup notes" style="padding:10px;border:1px solid #ccc;border-radius:8px;">
+      <textarea id="manual-notes" placeholder="Packing / delivery notes" style="padding:10px;border:1px solid #ccc;border-radius:8px;min-height:70px;"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><label style="font-size:11px;font-weight:800;">Driver<select id="manual-driver" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px;margin-top:4px;">${driverAssignmentOptions('')}</select></label><label style="font-size:11px;font-weight:800;">Vehicle<select id="manual-vehicle" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px;margin-top:4px;">${vehicleAssignmentOptions('')}</select></label></div>
+      <select id="manual-status" style="padding:10px;border:1px solid #ccc;border-radius:8px;"><option value="confirmed">Confirmed</option><option value="pending">Pending</option></select>
+      <button class="btn btn-pink" style="width:100%;padding:13px;" onclick="saveManualBooking()">💾 Save Last-Minute Booking</button>
+      <button class="btn btn-gray" style="width:100%;" onclick="closeModalBtn()">Cancel</button>
+      <div id="manual-save-status" style="font-size:11px;text-align:center;color:#666;"></div>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function saveManualBooking(){
+  const name=String(document.getElementById('manual-name')?.value||'').trim();
+  const date=String(document.getElementById('manual-date')?.value||'').trim();
+  const product=String(document.getElementById('manual-product')?.value||'').trim();
+  const statusEl=document.getElementById('manual-save-status');
+  if(!name || !date || !product){ if(statusEl)statusEl.textContent='Customer name, delivery date and item(s) are required.'; return; }
+  const collectionDate=String(document.getElementById('manual-collection-date')?.value||date).trim() || date;
+  if(collectionDate < date){ if(statusEl)statusEl.textContent='Collection date cannot be before the delivery date.'; return; }
+  const id=`manual-${Date.now()}-${Math.random().toString(36).slice(2,7)}`;
+  const booking={
+    id,
+    name,
+    phone:String(document.getElementById('manual-phone')?.value||'').trim(),
+    addr:String(document.getElementById('manual-address')?.value||'').trim(),
+    date,
+    edate:collectionDate,
+    status:String(document.getElementById('manual-status')?.value||'confirmed'),
+    castleId:null,
+    castleNameRaw:product,
+    extras:String(document.getElementById('manual-extras')?.value||'').split(',').map(x=>x.trim()).filter(Boolean),
+    notes:String(document.getElementById('manual-notes')?.value||'').trim(),
+    setup:String(document.getElementById('manual-setup')?.value||'').trim(),
+    balloonColors:String(document.getElementById('manual-balloons')?.value||'').trim(),
+    _delivTime:String(document.getElementById('manual-delivery-time')?.value||'').trim(),
+    _collectTime:String(document.getElementById('manual-collection-time')?.value||'').trim(),
+    _hubNotes:'', _delivered:false, _collected:false,
+    _assignedDriver:normalizeDriverAssignment(document.getElementById('manual-driver')?.value||''),
+    _assignedVehicle:normalizeVehicleAssignment(document.getElementById('manual-vehicle')?.value||''),
+    _fromCSV:false, _manual:true
+  };
+  if(statusEl) statusEl.textContent='Saving to Turso…';
+  try {
+    await apiCall('save-bookings',{method:'POST',body:{bookings:[booking]}});
+    importedBBB=[...(importedBBB||[]),booking];
+    try { localStorage.setItem('hub_bbb',JSON.stringify(importedBBB)); } catch(e) {}
+    syncAll(true);
+    closeModalBtn();
+    alert('✅ Last-minute Bubble Bounce Inflatables booking saved to Turso.');
+  } catch(e) {
+    if(statusEl) statusEl.textContent=`⚠️ Could not save: ${e.message}`;
+  }
+}
 
 // ─── PACKING LIST ─────────────────────────────────────────────────────────
 function getDriverDays(){
@@ -2042,7 +2071,7 @@ function driverBookingCard(b,ds){
     <div style="font-weight:900;font-size:14px;">${escHtml(b.name||'Unknown customer')}</div>
     <div style="font-size:12px;color:#555;margin-top:4px;">${isDelivery?'🚚 DELIVERY ':''}${isCollection?'🔄 COLLECTION ':''}${escHtml((isDelivery?b._delivTime:b._collectTime)||'Time not set')}</div>
     <div style="font-size:12px;margin-top:4px;">🏰 ${escHtml(product)}${Array.isArray(b.extras)&&b.extras.length?' • '+escHtml(b.extras.join(', ')):''}</div>
-    <div style="font-size:12px;margin-top:4px;font-weight:900;color:#6a1b9a;">🚙 Vehicle: ${escHtml(b._assignedVehicle||'⚠️ Not assigned')}</div>
+    <div style="font-size:12px;margin-top:4px;font-weight:900;color:#6a1b9a;">🚙 Vehicle: ${escHtml(vehicleAssignmentLabel(b._assignedVehicle))}</div>
     <div style="font-size:12px;margin-top:4px;">📍 ${escHtml(b.addr||'No address')}</div>
     <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;">
       ${b.phone?`<button class="btn btn-green btn-sm" onclick="callClient('${String(b.phone).replace(/'/g,'')}')">Call</button>`:''}
@@ -2052,18 +2081,19 @@ function driverBookingCard(b,ds){
 }
 function renderDrivers(){
   const board=document.getElementById('drivers-board'); if(!board)return;
+  renderTransportSettings();
   const days=getDriverDays();
-  const drivers=['Driver 1','Driver 2','Driver 3','Driver 4'];
-  board.innerHTML=drivers.map((driver,di)=>{
-    const total=allBookings.filter(b=>b.status!=='cancelled'&&b._assignedDriver===driver&&days.some(x=>b.date===x.date||(b.edate||b.date)===x.date)).length;
+  board.innerHTML=[1,2,3,4].map((slot,di)=>{
+    const key=driverKey(slot);
+    const total=allBookings.filter(b=>b.status!=='cancelled'&&normalizeDriverAssignment(b._assignedDriver)===key&&days.some(x=>b.date===x.date||(b.edate||b.date)===x.date)).length;
     return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:12px;">
-      <div style="padding:13px 14px;background:linear-gradient(135deg,var(--teal),var(--purple));color:white;font-size:17px;font-weight:900;">🚚 ${driver} <span style="font-size:11px;opacity:.9;">• ${total} booking${total!==1?'s':''}</span></div>
+      <div style="padding:13px 14px;background:linear-gradient(135deg,var(--teal),var(--purple));color:white;font-size:17px;font-weight:900;">🚚 Driver ${slot}${String(driverSlot(slot)?.driver_name||'').trim()?': '+escHtml(driverSlot(slot).driver_name):''} <span style="font-size:11px;opacity:.9;">• ${total} booking${total!==1?'s':''}</span></div>
       <div style="padding:10px;">${days.map((day,i)=>{
-        const bs=allBookings.filter(b=>b.status!=='cancelled'&&b._assignedDriver===driver&&(b.date===day.date||(b.edate||b.date)===day.date)).sort((a,b)=>(a._delivTime||a._collectTime||'99:99').localeCompare(b._delivTime||b._collectTime||'99:99'));
+        const bs=allBookings.filter(b=>b.status!=='cancelled'&&normalizeDriverAssignment(b._assignedDriver)===key&&(b.date===day.date||(b.edate||b.date)===day.date)).sort((a,b)=>(a._delivTime||a._collectTime||'99:99').localeCompare(b._delivTime||b._collectTime||'99:99'));
         const id=`drv-${di}-${i}`;
         return `<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden;">
           <button onclick="document.getElementById('${id}').style.display=document.getElementById('${id}').style.display==='none'?'block':'none'" style="width:100%;border:0;background:#fafafa;padding:11px;text-align:left;font-weight:900;cursor:pointer;display:flex;justify-content:space-between;"><span>${day.name} • ${formatDateNice(day.date)}</span><span>${bs.length} ▾</span></button>
-          <div id="${id}" style="display:none;padding:7px;">${bs.length?bs.map(b=>driverBookingCard(b,day.date)).join(''):'<div style="padding:12px;color:#777;font-size:12px;">No bookings assigned for this day.</div>'}</div>
+          <div id="${id}" style="display:none;padding:7px;">${bs.length?bs.map(b=>driverBookingCard(b,day.date)).join(''):'<div style="padding:12px;color:#777;font-size:12px;">No Bubble Bounce Inflatables bookings assigned for this day.</div>'}</div>
         </div>`;
       }).join('')}</div></div>`;
   }).join('');
@@ -2167,10 +2197,10 @@ function renderPacking(){
   if(!fromEl||!toEl)return;
   if(!fromEl.value){const wk=getThisWeekend();fromEl.value=wk.sat;toEl.value=wk.sun;}
   const from=fromEl.value, to=toEl.value||from;
-  const vehicleOrder={'':-1,'Bantam':0,'Vehicle 2':1,'Vehicle 3':2,'Vehicle 4':3};
+  const vehicleIndex=v=>{const m=normalizeVehicleAssignment(v).match(/^vehicle-([1-4])$/);return m?+m[1]:99;};
   const bookings=allBookings.filter(b=>b.status!=='cancelled' && b.date && b.date>=from && b.date<=to)
-    .sort((a,b)=>(vehicleOrder[String(a._assignedVehicle||'')] ?? 50)-(vehicleOrder[String(b._assignedVehicle||'')] ?? 50)
-      || String(a._assignedVehicle||'').localeCompare(String(b._assignedVehicle||''))
+    .sort((a,b)=>vehicleIndex(a._assignedVehicle)-vehicleIndex(b._assignedVehicle)
+      || vehicleAssignmentLabel(a._assignedVehicle).localeCompare(vehicleAssignmentLabel(b._assignedVehicle))
       || (a.date||'').localeCompare(b.date||'')
       || (a._delivTime||'99:99').localeCompare(b._delivTime||'99:99'));
   const list=document.getElementById('packing-list'), summary=document.getElementById('packing-summary');
@@ -2183,9 +2213,9 @@ function renderPacking(){
   let out='';
   let lastVehicle=null;
   bookings.forEach(b=>{
-    const vehicle=String(b._assignedVehicle||'').trim();
+    const vehicle=normalizeVehicleAssignment(b._assignedVehicle);
     if(vehicle!==lastVehicle){
-      const label=vehicle || '⚠️ VEHICLE NOT ASSIGNED';
+      const label=vehicle ? vehicleAssignmentLabel(vehicle) : '⚠️ VEHICLE NOT ASSIGNED';
       const warn=!vehicle;
       out+=`<div style="margin:16px 0 9px;padding:13px 14px;border-radius:12px;font-size:18px;font-weight:900;${warn?'background:#ffebee;color:#b71c1c;border:2px solid #ef9a9a;':'background:linear-gradient(135deg,var(--teal),var(--purple));color:white;'}">🚙 ${warn?'ALLOCATE THESE BOOKINGS BEFORE PACKING':'LOAD INTO '+escHtml(label)}</div>`;
       lastVehicle=vehicle;
@@ -2198,7 +2228,7 @@ function renderPacking(){
       <div class="pack-head">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
           <div><div class="pack-title">${escHtml(b.name||'Unknown customer')}</div>
-          <div class="pack-meta">${escHtml(b.date||'')} ${b._delivTime?' • '+escHtml(b._delivTime):''} • ${escHtml(sourceLabel(b._source))}<br>${escHtml(b.addr||'No address')}</div><div style="margin-top:8px;padding:10px;border-radius:9px;background:#fff3e0;font-size:15px;font-weight:900;color:#bf360c;">🚙 PACK INTO: ${escHtml(b._assignedVehicle||'⚠️ VEHICLE NOT ASSIGNED')}</div></div>
+          <div class="pack-meta">${escHtml(b.date||'')} ${b._delivTime?' • '+escHtml(b._delivTime):''} • Bubble Bounce Inflatables<br>${escHtml(b.addr||'No address')}</div><div style="margin-top:8px;padding:10px;border-radius:9px;background:#fff3e0;font-size:15px;font-weight:900;color:#bf360c;">🚙 PACK INTO: ${escHtml(b._assignedVehicle ? vehicleAssignmentLabel(b._assignedVehicle) : '⚠️ VEHICLE NOT ASSIGNED')}</div></div>
           <span class="badge ${complete?'badge-confirmed':'badge-pending'}">${complete?'✅ PACKED':'📦 PACK'}</span>
         </div>
       </div>`;
@@ -2224,359 +2254,6 @@ function renderPacking(){
   summary.innerHTML=`<div class="pack-summary"><strong>${bookings.length} booking${bookings.length!==1?'s':''}</strong> to pack • <strong>${done}/${total}</strong> checklist items ticked.<br><span style="color:#777;">Kevin's list is pulled from every non-cancelled delivery booking in this date range. Each booking shows the vehicle it must be packed into — independent of driver assignment. Main booked equipment, extras and balloon requirements are included, with standard setup/safety kit added for inflatable bookings.</span></div>`;
   list.innerHTML=out;
 }
-
-// ─── ROUTE PLANNER ─────────────────────────────────────────────────────
-// Plans actual delivery/collection stops for one date. Road travel times and
-// distances come from OSRM after addresses are geocoded with OpenStreetMap's
-// Nominatim service. Waze remains the driver navigation app.
-//
-// IMPORTANT: road-time estimates here are planning estimates, not live Waze
-// traffic ETAs. The configurable safety buffer is deliberately added to every
-// drive leg so fixed booking times can be checked for clashes conservatively.
-
-function saveRouteStart() { saveRouteSettings(); }
-
-function saveRouteSettings() {
-  const vals = {
-    addr: (document.getElementById('route-start') || {}).value || '',
-    start: (document.getElementById('route-start-time') || {}).value || '07:00',
-    service: (document.getElementById('route-service-min') || {}).value || '20',
-    buffer: (document.getElementById('route-buffer-min') || {}).value || '10'
-  };
-  try { localStorage.setItem('route_settings', JSON.stringify(vals)); } catch(e) {}
-  try { localStorage.setItem('route_start_addr', vals.addr.trim()); } catch(e) {}
-}
-
-function loadRouteDefaults() {
-  const dateEl = document.getElementById('route-date');
-  const startEl = document.getElementById('route-start');
-  const startTimeEl = document.getElementById('route-start-time');
-  const serviceEl = document.getElementById('route-service-min');
-  const bufferEl = document.getElementById('route-buffer-min');
-  if (dateEl && !dateEl.value) dateEl.value = fmtDate(new Date());
-  let saved = null;
-  try { saved = JSON.parse(localStorage.getItem('route_settings') || 'null'); } catch(e) {}
-  if (startEl) {
-    let legacy = '';
-    try { legacy = localStorage.getItem('route_start_addr') || ''; } catch(e) {}
-    startEl.value = (saved && saved.addr) || legacy;
-  }
-  if (startTimeEl) startTimeEl.value = (saved && saved.start) || '07:00';
-  if (serviceEl) serviceEl.value = (saved && saved.service) || '20';
-  if (bufferEl) bufferEl.value = (saved && saved.buffer) || '10';
-}
-
-function timeToMinutes(t) {
-  if (!/^\d{2}:\d{2}$/.test(t || '')) return null;
-  const [h,m] = t.split(':').map(Number);
-  if (h > 23 || m > 59) return null;
-  return h * 60 + m;
-}
-
-function minutesToTime(mins) {
-  mins = Math.max(0, Math.round(mins));
-  const h = Math.floor(mins / 60) % 24;
-  const m = mins % 60;
-  return pad(h) + ':' + pad(m);
-}
-
-function escHtml(v) {
-  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function haversineKm(a, b) {
-  const R = 6371;
-  const dLat = (b.lat - a.lat) * Math.PI / 180;
-  const dLng = (b.lng - a.lng) * Math.PI / 180;
-  const lat1 = a.lat * Math.PI / 180, lat2 = b.lat * Math.PI / 180;
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.asin(Math.sqrt(h));
-}
-
-async function geocodeAddress(addr) {
-  const clean = (addr || '').trim();
-  if (!clean) return null;
-  const cacheKey = 'geo_' + clean.toLowerCase();
-  try {
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) return { ...JSON.parse(cached), _cached: true };
-  } catch(e) {}
-
-  try {
-    const q = /south africa|gauteng|johannesburg|pretoria/i.test(clean) ? clean : clean + ', Gauteng, South Africa';
-    const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=za&q=${encodeURIComponent(q)}`;
-    const res = await fetch(url, { headers: { 'Accept-Language': 'en-ZA,en' } });
-    if (!res.ok) throw new Error('Geocoder HTTP ' + res.status);
-    const data = await res.json();
-    if (data && data[0]) {
-      const coord = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name || clean };
-      try { localStorage.setItem(cacheKey, JSON.stringify(coord)); } catch(e) {}
-      return { ...coord, _cached: false };
-    }
-  } catch(e) { console.warn('Geocode failed for', clean, e); }
-  return null;
-}
-
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-async function getRoadMatrix(coords) {
-  if (!coords.length) return null;
-  if (coords.length === 1) return { durations:[[0]], distances:[[0]], source:'none' };
-  try {
-    const coordStr = coords.map(c => `${c.lng},${c.lat}`).join(';');
-    const url = `https://router.project-osrm.org/table/v1/driving/${coordStr}?annotations=duration,distance`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Routing HTTP ' + res.status);
-    const data = await res.json();
-    if (data.code !== 'Ok' || !data.durations || !data.distances) throw new Error(data.message || 'No route matrix');
-    return { durations:data.durations, distances:data.distances, source:'osrm' };
-  } catch(e) {
-    console.warn('Road matrix failed, using conservative straight-line estimate', e);
-    const durations = coords.map(a => coords.map(b => {
-      const km = haversineKm(a,b);
-      return km === 0 ? 0 : (km / 35) * 3600; // fallback average urban speed
-    }));
-    const distances = coords.map(a => coords.map(b => haversineKm(a,b) * 1000 * 1.25));
-    return { durations, distances, source:'fallback' };
-  }
-}
-
-function matrixTravel(matrix, fromIndex, toIndex, bufferMin) {
-  if (fromIndex == null || toIndex == null) return { min:0, km:0 };
-  const sec = matrix.durations[fromIndex] && matrix.durations[fromIndex][toIndex];
-  const metres = matrix.distances[fromIndex] && matrix.distances[fromIndex][toIndex];
-  const baseMin = Number.isFinite(sec) ? Math.ceil(sec / 60) : 0;
-  return { min: baseMin + bufferMin, baseMin, km: Number.isFinite(metres) ? metres / 1000 : 0 };
-}
-
-function buildSmartOrder(stops, matrix, startIndex, startMin, serviceMin, bufferMin) {
-  const remaining = stops.slice();
-  const route = [];
-  let currentIdx = startIndex;
-  let clock = startMin;
-
-  while (remaining.length) {
-    const timed = remaining.filter(s => s.fixedMin != null).sort((a,b) => a.fixedMin - b.fixedMin);
-    const deadline = timed[0] || null;
-    const untimed = remaining.filter(s => s.fixedMin == null);
-    let chosen = null;
-
-    if (deadline && untimed.length) {
-      const feasible = untimed.map(s => {
-        const toCandidate = matrixTravel(matrix, currentIdx, s.matrixIndex, bufferMin).min;
-        const candidateToDeadline = matrixTravel(matrix, s.matrixIndex, deadline.matrixIndex, bufferMin).min;
-        const finishCandidate = clock + toCandidate + serviceMin;
-        const deadlineArrival = finishCandidate + candidateToDeadline;
-        return { s, toCandidate, deadlineArrival };
-      }).filter(x => x.deadlineArrival <= deadline.fixedMin)
-        .sort((a,b) => a.toCandidate - b.toCandidate);
-      if (feasible.length) chosen = feasible[0].s;
-    }
-
-    if (!chosen && deadline) chosen = deadline;
-    if (!chosen) {
-      chosen = untimed.slice().sort((a,b) =>
-        matrixTravel(matrix, currentIdx, a.matrixIndex, bufferMin).min -
-        matrixTravel(matrix, currentIdx, b.matrixIndex, bufferMin).min
-      )[0];
-    }
-
-    const travel = matrixTravel(matrix, currentIdx, chosen.matrixIndex, bufferMin);
-    const arrival = clock + travel.min;
-    let serviceStart = arrival;
-    let lateBy = 0;
-    let waitMin = 0;
-    if (chosen.fixedMin != null) {
-      if (arrival > chosen.fixedMin) lateBy = arrival - chosen.fixedMin;
-      else { waitMin = chosen.fixedMin - arrival; serviceStart = chosen.fixedMin; }
-    }
-    const depart = serviceStart + serviceMin;
-    chosen.travel = travel;
-    chosen.arrivalMin = arrival;
-    chosen.serviceStartMin = serviceStart;
-    chosen.departMin = depart;
-    chosen.lateBy = lateBy;
-    chosen.waitMin = waitMin;
-    route.push(chosen);
-    remaining.splice(remaining.indexOf(chosen), 1);
-    currentIdx = chosen.matrixIndex;
-    clock = depart;
-  }
-  return route;
-}
-
-async function calculateRoute() {
-  const ds = document.getElementById('route-date').value;
-  const startAddr = document.getElementById('route-start').value.trim();
-  const startTime = document.getElementById('route-start-time').value || '07:00';
-  const serviceMin = Math.max(0, parseInt(document.getElementById('route-service-min').value || '20', 10));
-  const bufferMin = Math.max(0, parseInt(document.getElementById('route-buffer-min').value || '10', 10));
-  const progressEl = document.getElementById('route-progress');
-  const resultsEl = document.getElementById('route-results');
-  if (!ds) { alert('Pick a date first.'); return; }
-  if (!startAddr) { alert('Add your warehouse / starting address so travel times can be checked properly.'); return; }
-  const startMin = timeToMinutes(startTime);
-  if (startMin == null) { alert('Choose a valid route start time.'); return; }
-  saveRouteSettings();
-
-  // Only create real movements for the chosen day. Same-day hires correctly
-  // create TWO stops (delivery + collection) when a collection leg exists.
-  const dayBookings = allBookings.filter(b => b.status !== 'cancelled' && b.addr && (b.date === ds || b.edate === ds));
-  let stops = [];
-  dayBookings.forEach(b => {
-    if (b.date === ds) stops.push({ booking:b, type:'deliver', time:b._delivTime || '', fixedMin:timeToMinutes(b._delivTime || '') });
-    if (b.edate === ds) {
-      // Avoid adding a duplicate collection only when the source has no collection signal at all.
-      const hasCollectionSignal = b.edate !== b.date || !!b._collectTime;
-      if (hasCollectionSignal) stops.push({ booking:b, type:'collect', time:b._collectTime || '', fixedMin:timeToMinutes(b._collectTime || '') });
-    }
-  });
-
-  if (!stops.length) {
-    resultsEl.innerHTML = `<div class="empty"><div class="empty-icon">🗺️</div><div class="empty-text">No delivery or collection stops for this day</div></div>`;
-    return;
-  }
-
-  resultsEl.innerHTML = '';
-  progressEl.textContent = `📍 Checking starting address...`;
-  const startCoord = await geocodeAddress(startAddr);
-  if (!startCoord) {
-    progressEl.textContent = '';
-    resultsEl.innerHTML = `<div class="card" style="border-left:4px solid var(--red);"><strong>⚠️ Starting address could not be found.</strong><div style="font-size:12px;margin-top:5px;">Use a fuller address with suburb and city, then calculate again.</div></div>`;
-    return;
-  }
-  if (!startCoord._cached) await sleep(1100);
-
-  const located = [];
-  const unlocated = [];
-  const addressCache = new Map();
-  for (let i = 0; i < stops.length; i++) {
-    progressEl.textContent = `📍 Checking address ${i + 1} of ${stops.length}...`;
-    const key = (stops[i].booking.addr || '').trim().toLowerCase();
-    let coord = addressCache.get(key);
-    if (!coord) {
-      coord = await geocodeAddress(stops[i].booking.addr);
-      if (coord) addressCache.set(key, coord);
-      if (coord && !coord._cached) await sleep(1100); // Nominatim public policy: max 1 request/sec
-    }
-    if (coord) { stops[i].coord = coord; located.push(stops[i]); }
-    else unlocated.push(stops[i]);
-  }
-
-  if (!located.length) {
-    progressEl.textContent = '';
-    renderRoute([], unlocated, 0, startAddr, { startTime, serviceMin, bufferMin, matrixSource:'none' });
-    return;
-  }
-
-  progressEl.textContent = '🚗 Calculating road travel times...';
-  const coords = [startCoord, ...located.map(s => s.coord)];
-  located.forEach((s,i) => s.matrixIndex = i + 1);
-  const matrix = await getRoadMatrix(coords);
-  const route = buildSmartOrder(located, matrix, 0, startMin, serviceMin, bufferMin);
-  const totalKm = route.reduce((sum,s) => sum + (s.travel ? s.travel.km : 0), 0);
-
-  progressEl.textContent = '';
-  renderRoute(route, unlocated, totalKm, startAddr, { startTime, serviceMin, bufferMin, matrixSource:matrix.source });
-}
-
-function routeStopLabel(type) {
-  if (type === 'collect') return { text: '🔄 Collect', color: '#1565c0' };
-  return { text: '🚚 Deliver', color: '#2e7d32' };
-}
-
-function mapsNav(addr, lat, lng) {
-  // Waze Deep Link. Coordinates are preferred when the planner has already
-  // geocoded the stop; otherwise Waze searches the full address.
-  let url;
-  if (Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))) {
-    url = `https://waze.com/ul?ll=${encodeURIComponent(lat + ',' + lng)}&navigate=yes&utm_source=delivery_hub`;
-  } else {
-    url = `https://waze.com/ul?q=${encodeURIComponent(addr)}&navigate=yes&utm_source=delivery_hub`;
-  }
-  window.open(url, '_blank');
-}
-
-function renderRoute(route, unlocated, totalKm, startAddr, opts) {
-  const resultsEl = document.getElementById('route-results');
-  opts = opts || {};
-  const clashes = route.filter(s => s.lateBy > 0);
-  let html = '';
-
-  html += `<div class="card" style="text-align:center;background:linear-gradient(135deg,#00a9b7,#7b4bb7);color:white;">
-    <div style="font-size:24px;font-weight:900;">${route.length} stop${route.length !== 1 ? 's' : ''} · ~${totalKm.toFixed(1)} km</div>
-    <div style="font-size:12px;opacity:0.95;margin-top:3px;">Starts ${escHtml(opts.startTime || '')} · ${opts.serviceMin || 0} min/stop · ${opts.bufferMin || 0} min drive buffer</div>
-    <div style="font-size:10px;opacity:0.8;margin-top:4px;">Road estimates: ${opts.matrixSource === 'osrm' ? 'OSRM / OpenStreetMap' : 'fallback estimate'} · Navigation: Waze</div>
-  </div>`;
-
-  if (clashes.length) {
-    html += `<div class="card" style="border-left:5px solid var(--red);background:var(--red-light);">
-      <div style="font-weight:900;color:var(--red);font-size:15px;">⚠️ ${clashes.length} TIME CLASH${clashes.length !== 1 ? 'ES' : ''}</div>
-      <div style="font-size:12px;color:#7f1d1d;margin-top:5px;line-height:1.5;">This route cannot reach every fixed booking time with the current start time, stop duration and safety buffer. Change a booking time, leave earlier, reduce stop time, or use another vehicle/driver.</div>
-    </div>`;
-  } else if (route.length) {
-    html += `<div class="card" style="border-left:5px solid var(--green);background:var(--green-light);">
-      <div style="font-weight:900;color:var(--green);">✅ No calculated time clashes</div>
-      <div style="font-size:11px;color:#356b3a;margin-top:4px;">All fixed times are reachable using the planning estimate plus your safety buffer.</div>
-    </div>`;
-  }
-
-  route.forEach((s, i) => {
-    const b = s.booking;
-    const label = routeStopLabel(s.type);
-    const safeAddr = escHtml(b.addr || '');
-    const safeName = escHtml(b.name || 'Unknown');
-    const phone = String(b.phone || '').replace(/[^0-9+]/g,'');
-    const navAddr = encodeURIComponent(b.addr || '').replace(/'/g, '%27');
-    const navName = encodeURIComponent(b.name || 'there').replace(/'/g, '%27');
-    const fixed = s.fixedMin != null ? minutesToTime(s.fixedMin) : '';
-    const eta = minutesToTime(s.arrivalMin);
-    const start = minutesToTime(s.serviceStartMin);
-    const depart = minutesToTime(s.departMin);
-    const statusHtml = s.lateBy > 0
-      ? `<span style="background:var(--red);color:white;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;">⚠️ ${s.lateBy} MIN LATE</span>`
-      : fixed ? `<span style="background:var(--green);color:white;font-size:10px;font-weight:900;padding:3px 8px;border-radius:10px;">✅ ON TIME</span>` : '';
-
-    if (s.travel) {
-      html += `<div class="route-leg">↓ ~${s.travel.km.toFixed(1)} km · ${s.travel.baseMin} min drive + ${opts.bufferMin || 0} min buffer</div>`;
-    }
-
-    html += `<div class="route-stop" style="${s.lateBy > 0 ? 'border:2px solid var(--red);' : ''}">
-      <div class="route-stop-num">${i + 1}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-weight:800;font-size:14px;">${safeName}</span>
-          <span style="background:${label.color};color:white;font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;">${label.text}</span>
-        </div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;align-items:center;">${statusHtml}
-          ${fixed ? `<span style="font-size:11px;font-weight:800;color:#e65100;">Booked ${fixed}</span>` : `<span style="font-size:11px;color:#777;">Flexible time</span>`}
-        </div>
-        <div style="font-size:12px;margin-top:6px;"><strong>ETA ${eta}</strong> · Work ${start}–${depart}${s.waitMin ? ` · wait ${s.waitMin} min` : ''}</div>
-        <div style="font-size:12px;color:#555;margin-top:3px;overflow-wrap:anywhere;">📍 ${safeAddr}</div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-          ${phone ? `<button class="btn btn-green btn-sm" onclick="callClient('${phone}')">Call</button>` : ''}
-          ${phone ? `<button class="btn btn-sm" style="background:#25d366;color:white;" onclick="waClient('${phone}',decodeURIComponent('${navName}'))">WhatsApp</button>` : ''}
-          <button class="btn btn-blue btn-sm" onclick="mapsNav(decodeURIComponent('${navAddr}'),${Number(s.coord.lat)},${Number(s.coord.lng)})">🚙 Open Waze</button>
-        </div>
-      </div>
-    </div>`;
-  });
-
-  if (unlocated.length) {
-    html += `<div class="card" style="border-left:4px solid var(--red);">
-      <div style="font-weight:800;font-size:13px;color:var(--red);margin-bottom:6px;">⚠️ Couldn't locate ${unlocated.length} stop${unlocated.length !== 1 ? 's' : ''}</div>
-      <div style="font-size:12px;color:#666;">These are NOT included in the clash calculation. Fix the address, then calculate again:</div>
-      <ul style="margin:6px 0 0 18px;font-size:12px;color:#666;">
-        ${unlocated.map(s => `<li>${escHtml(s.booking.name || 'Unknown')} — ${escHtml(s.booking.addr || 'no address')} (${s.type})</li>`).join('')}
-      </ul>
-    </div>`;
-  }
-
-  html += `<div style="font-size:10px;color:#999;text-align:center;line-height:1.5;margin:10px 8px 18px;">Planning data uses OpenStreetMap geocoding/road data. Waze opens for live driver navigation; actual traffic can change after the route is calculated.</div>`;
-  resultsEl.innerHTML = html;
-}
-
-
 
 // RENDER + TURSO ACCESS
 const STAFF_SESSION_KEY = 'delivery_hub_staff_session_v2';
@@ -2614,9 +2291,10 @@ async function apiCall(action, options = {}) {
       return { ok: true, user: { name: 'Bubble Bounce Team', role: 'Staff' }, preview: true };
     }
     if (previewPin !== '4321') throw new Error('Enter PIN 4321 to use preview mode.');
-    if (action === 'bookings') return { ok: true, tables: [], allTableNames: [], preview: true };
+    if (action === 'bookings') return { ok: true, tables: [], allTableNames: [], transportSlots, preview: true };
     if (action === 'save-bookings') return { ok: true, saved: Array.isArray(options.body?.bookings) ? options.body.bookings.length : 0, preview: true };
     if (action === 'update-booking') return { ok: true, changed: 1, preview: true };
+    if (action === 'save-transport-settings') { transportSlots=normalizeTransportSlots(options.body?.slots||transportSlots); try{localStorage.setItem('bb_transport_slots',JSON.stringify(transportSlots));}catch(e){} return {ok:true,slots:transportSlots,preview:true}; }
     if (action === 'clear-bookings') return { ok: true, deleted: 0, preview: true };
     if (action === 'health') return { ok: true, preview: true };
   }
@@ -2695,16 +2373,7 @@ function dbDate(v) {
   return s;
 }
 
-function inferSource(tableName, row) {
-  const business = String(firstValue(row, ['business','company','brand','source'], '')).toLowerCase();
-  const joined = `${String(tableName).toLowerCase()} ${business}`;
-  if (joined.includes('jump & bubble') || joined.includes('jump and bubble') || joined.includes('jab')) return 'jab';
-  if (joined.includes('bubble bounce') || joined.includes('bbb')) return 'bbb';
-  return 'jj';
-}
-
 function normalizeDbBooking(tableName, row, idx) {
-  const source = inferSource(tableName, row);
   const rawId = firstValue(row, ['external_id','externalid','booking_id','bookingid','uuid','reference','ref','id'], `${tableName}_${idx}`);
   const products = firstValue(row, ['products','product','product_name','castle','castle_hired','castle_name','item','items'], '');
   const extrasRaw = firstValue(row, ['extras','add_ons','addons','extra_items'], '');
@@ -2730,66 +2399,53 @@ function normalizeDbBooking(tableName, row, idx) {
     _delivered: !!firstValue(row, ['delivered','is_delivered'], false),
     _collected: !!firstValue(row, ['collected','is_collected'], false),
     _hubNotes: String(firstValue(row, ['hub_notes','driver_notes'], '')),
-    _assignedDriver: String(firstValue(row, ['assigned_driver'], '')),
-    _assignedVehicle: String(firstValue(row, ['assigned_vehicle','vehicle','car'], '')),
+    _assignedDriver: normalizeDriverAssignment(firstValue(row, ['assigned_driver'], '')),
+    _assignedVehicle: normalizeVehicleAssignment(firstValue(row, ['assigned_vehicle','vehicle','car'], '')),
     _fromCSV: true,
     _fromDb: true,
     _dbTable: tableName,
-    _source: source,
-    _id: `${source}_${rawId}`
+    _source: 'bbb',
+    _id: `bbb_${rawId}`
   };
 }
 
 async function loadFromTurso(silent = false) {
   const sub = document.getElementById('header-sub');
   if (IS_PREVIEW) {
-    if (sub) sub.textContent = 'Preview mode · local test data only · PIN 4321';
-    syncAll(true);
+    if (sub) sub.textContent = 'Bubble Bounce Inflatables preview mode · local test data only';
+    syncAll(true); renderTransportSettings();
     return true;
   }
-  if (sub) sub.textContent = 'Connecting to Turso…';
+  if (sub) sub.textContent = 'Connecting Bubble Bounce Inflatables to Turso…';
   try {
     const data = await apiCall('bookings');
-    const grouped = { jj: [], jab: [], bbb: [] };
-    let rowsSeen = 0;
+    transportSlots = normalizeTransportSlots(data.transportSlots || transportSlots);
+    try { localStorage.setItem('bb_transport_slots', JSON.stringify(transportSlots)); } catch(e) {}
+    const bookings=[];
+    let rowsSeen=0;
     (data.tables || []).forEach(t => {
       (t.rows || []).forEach((row, i) => {
         rowsSeen++;
-        const b = normalizeDbBooking(t.name, row, i);
-        // Only include rows that resemble bookings. This avoids pulling unrelated user/settings tables.
+        const b=normalizeDbBooking(t.name,row,i);
         if (!b.date && !b.name && !b.addr && !b.castleNameRaw) return;
-        if (b._source === 'bbb') grouped.bbb.push(b);
+        bookings.push(b);
       });
     });
-
-    // Turso is the source of truth across devices. Never merge stale browser cache
-    // back into a fresh database load, otherwise different devices can disagree.
-    importedJJ = [];
-    importedJAB = [];
-    importedBBB = grouped.bbb;
-
+    importedBBB=bookings;
     try {
-      localStorage.setItem('hub_jj', JSON.stringify(importedJJ));
-      localStorage.setItem('hub_jab', JSON.stringify(importedJAB));
-      localStorage.setItem('hub_bbb', JSON.stringify(importedBBB));
-      localStorage.setItem('hub_jj_label', 'Turso database');
-      localStorage.setItem('hub_jab_label', 'Turso database');
-      localStorage.setItem('hub_bbb_label', 'Turso database');
-      const now = new Date().toISOString();
-      localStorage.setItem('hub_jj_time', now); localStorage.setItem('hub_jab_time', now); localStorage.setItem('hub_bbb_time', now);
+      localStorage.setItem('hub_bbb',JSON.stringify(importedBBB));
+      localStorage.setItem('hub_bbb_label','Turso database');
+      localStorage.setItem('hub_bbb_time',new Date().toISOString());
     } catch(e) {}
-
     syncAll(true);
-    const total = grouped.bbb.length;
-    if (sub) sub.textContent = `${total} booking${total !== 1 ? 's' : ''} from Turso · ${data.tables?.length || 0} table(s) checked`;
-    if (!silent) alert(`✅ Turso sync complete: ${total} booking${total !== 1 ? 's' : ''} loaded.`);
-    if (!total && rowsSeen) {
-      alert(`⚠️ Turso connected, but no rows matched the booking fields Delivery Dash recognises. Database tables found: ${(data.allTableNames || []).join(', ') || 'none'}`);
-    }
+    const total=bookings.length;
+    if (sub) sub.textContent = `${total} Bubble Bounce Inflatables booking${total!==1?'s':''} from Turso`;
+    if (!silent) alert(`✅ Bubble Bounce Inflatables Turso sync complete: ${total} booking${total!==1?'s':''} loaded.`);
+    if (!total && rowsSeen) alert('⚠️ Turso connected, but no Bubble Bounce Inflatables booking rows could be read.');
     return true;
   } catch (e) {
-    if (sub) sub.textContent = `Database error: ${e.message}`;
-    if (!silent) alert(`⚠️ Could not load Turso data: ${e.message}`);
+    if (sub) sub.textContent = `Bubble Bounce Inflatables database error: ${e.message}`;
+    if (!silent) alert(`⚠️ Could not load Bubble Bounce Inflatables Turso data: ${e.message}`);
     return false;
   }
 }
@@ -2816,6 +2472,7 @@ async function restoreStaffSession() {
 
 // INIT
 initCalendar();
+loadPersistedTransportSettings();
 loadPersistedImports();
 if (IS_PREVIEW) {
   // Standalone preview: open directly into the app. The deployed Render app still requires PIN 4321.
